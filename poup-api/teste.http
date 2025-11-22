@@ -1,0 +1,16 @@
+### 1. Listar todos (Igual ao navegador)
+GET http://localhost:8080/lancamentos
+
+### 2. Criar um novo gasto (Hamburguer)
+POST http://localhost:8080/lancamentos
+Content-Type: application/json
+
+{
+  "descricao": "Hamburguer Artesanal",
+  "valor": -45.00,
+  "tipo": "DESPESA",
+  "data": "2025-11-22"
+}
+
+### 3. Deletar o Salário (ID 1)
+DELETE http://localhost:8080/lancamentos/1
