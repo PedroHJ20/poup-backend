@@ -49,7 +49,7 @@ type Goal = {
 
 // --- URL DO BACKEND ---
 // Se não carregar, trocaremos localhost pelo endereço público do Codespaces
-const API_URL = "http://localhost:8080/lancamentos";
+const API_URL = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev/lancamentos";
 
 const MOCK_GOALS: Goal[] = [
   { id: 1, title: 'Comprar Notebook', target: 3500, current: 1575, deadline: 'Dez/2025', icon: '💻' },
