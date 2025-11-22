@@ -18,7 +18,10 @@ import {
   X,
   ChevronRight,
   Plus,
-  Trash2
+  Trash2,
+  User,
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -36,7 +39,7 @@ type Transaction = {
 // IMPORTANTE: Mantenha a URL que estava funcionando para você!
 const API_URL = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev/lancamentos";
 
-// Dados Falsos PROVISÓRIOS apenas para o Gráfico ficar bonito (já que o backend não manda gráfico ainda)
+// Dados Falsos para o Gráfico (Enquanto não fazemos isso no Java)
 const CHART_DATA = [
   { name: 'Jan', receita: 4000, despesa: 2400 },
   { name: 'Fev', receita: 3000, despesa: 1398 },
@@ -46,7 +49,7 @@ const CHART_DATA = [
   { name: 'Jun', receita: 2390, despesa: 3800 },
 ];
 
-// --- COMPONENTES VISUAIS ---
+// --- COMPONENTES VISUAIS (CARDS E ITENS) ---
 
 const SummaryCard = ({ title, value, subtitle, type = 'neutral' }: { title: string, value: string, subtitle: string, type?: 'neutral' | 'positive' | 'negative' }) => {
   const getTextColor = () => {
@@ -95,6 +98,165 @@ const TransactionItem = ({ transaction, onDelete }: { transaction: Transaction, 
   </div>
 );
 
+// --- COMPONENTES DAS TELAS INTERNAS ---
+
+const BudgetPage = () => (
+  <div className="space-y-6 animate-fadeIn pb-20 md:pb-0">
+    <header>
+      <h1 className="text-3xl font-bold text-gray-800">Orçamento</h1>
+      <p className="text-gray-500">Controle de limites mensais</p>
+    </header>
+
+    <div className="bg-white p-8 rounded-3xl border border-gray-100 text-center space-y-6 relative overflow-hidden shadow-sm">
+      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+      
+      <div className="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <p className="text-xs text-gray-400 uppercase font-bold">Limite</p>
+          <p className="text-xl font-bold text-gray-800">R$ 3.600,00</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 uppercase font-bold">Gasto</p>
+          <p className="text-xl font-bold text-red-500">R$ 2.352,50</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 uppercase font-bold">Disponível</p>
+          <p className="text-xl font-bold text-green-500">R$ 1.247,50</p>
+        </div>
+      </div>
+
+      <div className="py-4">
+        <div className="flex justify-between text-sm mb-2 font-medium">
+          <span>Progresso do Mês</span>
+          <span className="text-yellow-600">65%</span>
+        </div>
+        <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-yellow-400 w-[65%]"></div>
+        </div>
+      </div>
+
+      <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 flex items-start gap-3 text-left">
+        <AlertTriangle className="text-yellow-600 shrink-0" size={20} />
+        <div>
+          <h4 className="text-sm font-bold text-yellow-800">Atenção ao consumo</h4>
+          <p className="text-xs text-yellow-700 mt-1">Você já consumiu 65% do orçamento. Tente reduzir gastos com Lazer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SettingsPage = () => (
+  <div className="space-y-6 animate-fadeIn pb-20 md:pb-0">
+    <header>
+      <h1 className="text-3xl font-bold text-gray-800">Configurações</h1>
+      <p className="text-gray-500">Gerencie seu perfil e preferências</p>
+    </header>
+
+    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+      <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <User size={20} /> Dados do Perfil
+      </h3>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+          <input type="text" defaultValue="Usuário Demo" className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+          <input type="email" defaultValue="usuario@email.com" className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors font-bold">
+          Salvar Alterações
+        </button>
+      </div>
+    </div>
+
+    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+      <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <Bell size={20} /> Notificações
+      </h3>
+      <div className="space-y-3">
+        {['Alertas de Orçamento', 'Vencimento de Contas', 'Dicas Semanais'].map((item) => (
+          <label key={item} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
+            <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
+            <span className="text-gray-700">{item}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const ReportsPage = () => (
+  <div className="space-y-6 animate-fadeIn pb-20 md:pb-0">
+    <header className="flex justify-between items-center">
+      <div>
+         <h1 className="text-3xl font-bold text-gray-800">Relatórios</h1>
+         <p className="text-gray-500">Análise detalhada das suas finanças</p>
+      </div>
+      <button className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl hover:bg-indigo-100 transition-colors text-sm font-bold">
+        <Download size={18} /> Exportar PDF
+      </button>
+    </header>
+
+    <div className="grid grid-cols-1 gap-6">
+      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Gastos por Categoria (Simulação)</h3>
+        <div className="space-y-4">
+          {[{cat: 'Moradia', val: 1200, pct: 60}, {cat: 'Alimentação', val: 450, pct: 25}, {cat: 'Lazer', val: 120, pct: 15}].map((item) => (
+            <div key={item.cat}>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-medium text-gray-700">{item.cat}</span>
+                <span className="text-gray-500">R$ {item.val} ({item.pct}%)</span>
+              </div>
+              <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500" style={{ width: `${item.pct}%` }}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const GoalsPage = () => (
+  <div className="space-y-6 animate-fadeIn pb-20 md:pb-0">
+    <header className="flex justify-between items-center">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800">Metas</h1>
+        <p className="text-gray-500">Seus objetivos financeiros</p>
+      </div>
+      <button className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200 transition-colors">
+        <Plus size={20} />
+      </button>
+    </header>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[
+        { title: 'Notebook Novo', target: 3500, current: 1500, icon: '💻' },
+        { title: 'Viagem', target: 5000, current: 1000, icon: '✈️' },
+        { title: 'Carro', target: 25000, current: 5000, icon: '🚗' },
+      ].map((goal, idx) => (
+        <div key={idx} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="text-4xl mb-4">{goal.icon}</div>
+          <h3 className="font-bold text-gray-800">{goal.title}</h3>
+          <div className="mt-4">
+            <div className="flex justify-between text-xs mb-1">
+               <span className="font-bold text-indigo-600">R$ {goal.current}</span>
+               <span className="text-gray-400">Meta: R$ {goal.target}</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+               <div className="h-full bg-indigo-500" style={{width: `${(goal.current/goal.target)*100}%`}}></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 // --- APP PRINCIPAL ---
 
 export default function PoupApp() {
@@ -102,7 +264,6 @@ export default function PoupApp() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // Lógica de Conexão com Java
   useEffect(() => {
     fetchTransactions();
   }, []);
@@ -157,7 +318,93 @@ export default function PoupApp() {
   const expense = transactions.filter(t => t.tipo === 'DESPESA').reduce((acc, cur) => acc + Math.abs(cur.valor), 0);
   const balance = income - expense;
 
-  // Componente de Navegação (Sidebar)
+  // --- RENDERIZAÇÃO DO CONTEÚDO ---
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'dashboard':
+        return (
+          <div className="space-y-8 animate-fadeIn">
+             <div>
+              <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+              <p className="text-gray-500 mt-1">Visão geral das suas finanças</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <SummaryCard title="Saldo Atual" value={balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} subtitle="Receitas - Despesas" />
+              <SummaryCard title="Receitas do Mês" value={`+ ${income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="positive" subtitle="Total de entradas" />
+              <SummaryCard title="Despesas do Mês" value={`- ${expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="negative" subtitle="Total de saídas" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-center mb-8">
+                   <h2 className="text-lg font-bold text-gray-800">Balanço Semestral</h2>
+                   <span className="text-xs font-medium text-gray-400 border px-3 py-1 rounded-full">Últimos 6 meses</span>
+                </div>
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={CHART_DATA} barSize={40}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                      <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} itemStyle={{ fontSize: '12px', fontWeight: 'bold' }} cursor={{fill: '#F8FAFC'}} />
+                      <Bar dataKey="receita" fill="#818CF8" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="despesa" fill="#C084FC" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col h-full">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-bold text-gray-800">Últimas Transações</h2>
+                  <div className="flex gap-2">
+                     <button onClick={() => handleAddTransaction('RECEITA')} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"><Plus size={18}/></button>
+                     <button onClick={() => handleAddTransaction('DESPESA')} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"><Plus size={18}/></button>
+                  </div>
+                </div>
+                <div className="space-y-3 overflow-y-auto max-h-80 pr-2 custom-scrollbar">
+                  {transactions.slice(0, 5).map(t => (
+                    <TransactionItem key={t.id} transaction={t} onDelete={handleDeleteTransaction} />
+                  ))}
+                  {transactions.length === 0 && <p className="text-center text-gray-400 py-8 text-sm">Nenhum registro.</p>}
+                </div>
+                <button className="mt-auto w-full py-3 text-sm font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors">Ver todas</button>
+              </div>
+            </div>
+          </div>
+        );
+      case 'orcamento': return <BudgetPage />;
+      case 'configuracoes': return <SettingsPage />;
+      case 'metas': return <GoalsPage />;
+      case 'relatorios': return <ReportsPage />;
+      
+      // Receitas e Despesas usam a mesma lista por enquanto
+      case 'receitas':
+      case 'despesas':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <header className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">{activeTab === 'receitas' ? 'Receitas' : 'Despesas'}</h1>
+                <p className="text-gray-500">Gerencie seus lançamentos</p>
+              </div>
+              <button onClick={() => handleAddTransaction(activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg">
+                <Plus size={18} /> Novo
+              </button>
+            </header>
+            <div className="bg-white p-6 rounded-3xl border border-gray-100">
+               <div className="space-y-3">
+                  {transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).map(t => (
+                    <TransactionItem key={t.id} transaction={t} onDelete={handleDeleteTransaction} />
+                  ))}
+                  {transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).length === 0 && <p className="text-gray-400 text-center py-10">Nada aqui ainda.</p>}
+               </div>
+            </div>
+          </div>
+        );
+      
+      default: return null;
+    }
+  };
+
   const NavItem = ({ id, icon: Icon, label }: { id: string, icon: any, label: string }) => (
     <button 
       onClick={() => { setActiveTab(id); setIsMobileMenuOpen(false); }}
@@ -175,22 +422,14 @@ export default function PoupApp() {
 
   return (
     <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden text-gray-800">
-      
-      {/* --- SIDEBAR (Barra Lateral) --- */}
       <aside className={`fixed inset-y-0 left-0 z-30 w-72 bg-white flex flex-col border-r border-gray-100 transition-transform duration-300 md:translate-x-0 md:static ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        
-        {/* Logo e Mascote */}
         <div className="p-6 pb-8 border-b border-gray-50 flex flex-col items-center text-center">
-          {/* AQUI ESTÁ A IMAGEM DO PORQUINHO */}
           <div className="w-40 h-40 mb-4 bg-indigo-50 rounded-full flex items-center justify-center relative overflow-hidden">
-             {/* Certifique-se de ter o arquivo poup.png na pasta public */}
              <img src="/poup.png" alt="Mascote POUP" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-black text-indigo-600 tracking-tight">POUP</h1>
           <p className="text-xs text-gray-400 font-medium mt-1">Finanças Simplificadas</p>
         </div>
-
-        {/* Menu */}
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
           <NavItem id="receitas" icon={TrendingUp} label="Receitas" />
@@ -200,8 +439,6 @@ export default function PoupApp() {
           <NavItem id="relatorios" icon={PieChart} label="Relatórios" />
           <NavItem id="configuracoes" icon={Settings} label="Configurações" />
         </nav>
-
-        {/* Botão Sair */}
         <div className="p-6 border-t border-gray-50">
           <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-colors">
             <LogOut size={20} /> Sair
@@ -209,23 +446,17 @@ export default function PoupApp() {
         </div>
       </aside>
 
-      {/* --- CONTEÚDO PRINCIPAL --- */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        
-        {/* Header (Cabeçalho) */}
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10">
           <button className="md:hidden text-gray-500" onClick={() => setIsMobileMenuOpen(true)}>
             <Menu size={24} />
           </button>
-
-          <div className="flex-1"></div> {/* Espaçador */}
-
+          <div className="flex-1"></div>
           <div className="flex items-center gap-6">
             <button className="relative p-2 text-gray-400 hover:text-indigo-600 transition-colors">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </button>
-            
             <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-gray-700">Usuário Demo</p>
@@ -238,83 +469,13 @@ export default function PoupApp() {
           </div>
         </header>
 
-        {/* Área de Scroll */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth bg-[#FAFAFA]">
           <div className="max-w-7xl mx-auto space-y-8">
-            
-            {/* Título da Página */}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-              <p className="text-gray-500 mt-1">Visão geral das suas finanças</p>
-            </div>
-
-            {/* Cards de Resumo */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SummaryCard title="Saldo Atual" value={balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} subtitle="Receitas - Despesas" />
-              <SummaryCard title="Receitas do Mês" value={`+ ${income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="positive" subtitle="Total de entradas" />
-              <SummaryCard title="Despesas do Mês" value={`- ${expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="negative" subtitle="Total de saídas" />
-            </div>
-
-            {/* Gráfico e Lista */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              
-              {/* Gráfico (Ocupa 2 colunas) */}
-              <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                <div className="flex justify-between items-center mb-8">
-                   <h2 className="text-lg font-bold text-gray-800">Balanço Semestral</h2>
-                   <span className="text-xs font-medium text-gray-400 border px-3 py-1 rounded-full">Últimos 6 meses</span>
-                </div>
-                <div className="h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={CHART_DATA} barSize={40}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                        cursor={{fill: '#F8FAFC'}}
-                      />
-                      <Bar dataKey="receita" fill="#818CF8" radius={[6, 6, 0, 0]} stackId="a" />
-                      <Bar dataKey="despesa" fill="#C084FC" radius={[6, 6, 0, 0]} stackId="b" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Lista de Transações (Ocupa 1 coluna) */}
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col h-full">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-lg font-bold text-gray-800">Últimas Transações</h2>
-                  <div className="flex gap-2">
-                     <button onClick={() => handleAddTransaction('RECEITA')} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors" title="Nova Receita"><Plus size={18}/></button>
-                     <button onClick={() => handleAddTransaction('DESPESA')} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Nova Despesa"><Plus size={18}/></button>
-                  </div>
-                </div>
-                
-                <div className="space-y-3 overflow-y-auto max-h-80 pr-2 custom-scrollbar">
-                  {transactions.slice(0, 5).map(t => (
-                    <TransactionItem key={t.id} transaction={t} onDelete={handleDeleteTransaction} />
-                  ))}
-                  {transactions.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-center">
-                      <p className="text-sm">Nenhum registro ainda.</p>
-                      <p className="text-xs mt-1">Clique nos botões + acima.</p>
-                    </div>
-                  )}
-                </div>
-                
-                <button className="mt-auto w-full py-3 text-sm font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors">
-                   Ver todas
-                </button>
-              </div>
-
-            </div>
+            {renderContent()}
           </div>
         </div>
       </main>
 
-      {/* Overlay Mobile */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-black/20 z-20 md:hidden backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
       )}
