@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye, Volume2
+  LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// --- TIPOS ---
+// --- TIPOS (Compatível com seu Java) ---
 type Categoria = { id: number; nome: string; icone: string; };
 type Transaction = { id: number; descricao: string; valor: number; tipo: string; data: string; categoria?: Categoria; };
+type Meta = { id: number; titulo: string; valorAlvo: number; valorAtual: number; dataLimite: string; icone: string; };
 
 // --- CONFIGURAÇÃO ---
+// ATENÇÃO: Se o link do Codespaces mudar, atualize aqui!
 const API_BASE = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev"; 
 
 const CHART_DATA = [
@@ -86,23 +88,34 @@ const BudgetPage = () => (
   </div>
 );
 
-const GoalsPage = () => (
+// AGORA AS METAS SÃO REAIS!
+const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   <div className="space-y-6 animate-fadeIn">
     <header className="flex justify-between items-center">
       <h1 className="text-3xl font-bold text-gray-800">Metas</h1>
-      <button className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button>
+      <button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button>
     </header>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[{ title: 'Notebook Novo', target: 3500, current: 1500, icon: '💻' }, { title: 'Viagem', target: 5000, current: 1000, icon: '✈️' }, { title: 'Carro', target: 25000, current: 5000, icon: '🚗' }].map((goal, idx) => (
-        <div key={idx} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="text-4xl mb-4">{goal.icon}</div>
-          <h3 className="font-bold text-gray-800">{goal.title}</h3>
-          <div className="mt-4">
-            <div className="flex justify-between text-xs mb-1"><span className="font-bold text-indigo-600">R$ {goal.current}</span><span className="text-gray-400">Meta: R$ {goal.target}</span></div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{width: `${(goal.current/goal.target)*100}%`}}></div></div>
+      {goals.map((goal) => {
+        const percent = Math.min(100, Math.round((goal.valorAtual / goal.valorAlvo) * 100));
+        return (
+          <div key={goal.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+            <div className="text-4xl mb-4">{goal.icone}</div>
+            <h3 className="font-bold text-gray-800">{goal.titulo}</h3>
+            <div className="mt-4">
+              <div className="flex justify-between text-xs mb-1">
+                 <span className="font-bold text-indigo-600">R$ {goal.valorAtual.toLocaleString()}</span>
+                 <span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                 <div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div>
+              </div>
+              <p className="text-right text-xs text-indigo-400 mt-1 font-bold">{percent}%</p>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+      {goals.length === 0 && <p className="col-span-3 text-center text-gray-400 py-10">Nenhuma meta criada. Clique no + para começar!</p>}
     </div>
   </div>
 );
@@ -130,7 +143,6 @@ const ReportsPage = () => (
 const SettingsPage = () => (
   <div className="space-y-6 animate-fadeIn">
     <h1 className="text-3xl font-bold text-gray-800">Configurações</h1>
-    
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2"><User size={20}/> Perfil</h3>
@@ -140,24 +152,12 @@ const SettingsPage = () => (
           <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700">Salvar</button>
         </div>
       </div>
-
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Eye size={20}/> Aparência</h3>
           <div className="flex gap-4">
             <button className="flex-1 p-4 border-2 border-indigo-600 bg-indigo-50 rounded-xl flex flex-col items-center gap-2 text-indigo-700 font-bold"><Sun size={24}/> Claro</button>
             <button className="flex-1 p-4 border border-gray-200 rounded-xl flex flex-col items-center gap-2 text-gray-500 hover:bg-gray-50"><Moon size={24}/> Escuro</button>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Bell size={20}/> Notificações</h3>
-          <div className="space-y-2">
-            {['Alertas de Orçamento', 'Vencimento', 'Dicas'].map(i => (
-              <label key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
-                <span className="text-gray-700">{i}</span>
-              </label>
-            ))}
           </div>
         </div>
       </div>
@@ -194,8 +194,11 @@ const ModalTransaction = ({ isOpen, onClose, onSave, type, categories }: any) =>
 export default function PoupApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
+  const [goals, setGoals] = useState<Meta[]>([]); // Estado das Metas
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
 
@@ -203,12 +206,17 @@ export default function PoupApp() {
 
   const fetchData = async () => {
     try {
-      const resTrans = await fetch(`${API_BASE}/lancamentos`);
-      const dataTrans = await resTrans.json();
-      setTransactions(dataTrans);
-      const resCat = await fetch(`${API_BASE}/categorias`);
-      const dataCat = await resCat.json();
-      setCategories(dataCat);
+      // Busca TUDO do Backend
+      const [resTrans, resCat, resGoals] = await Promise.all([
+        fetch(`${API_BASE}/lancamentos`),
+        fetch(`${API_BASE}/categorias`),
+        fetch(`${API_BASE}/metas`)
+      ]);
+
+      setTransactions(await resTrans.json());
+      setCategories(await resCat.json());
+      setGoals(await resGoals.json());
+
     } catch (error) { console.error("Erro:", error); }
   };
 
@@ -217,6 +225,22 @@ export default function PoupApp() {
     const newTransaction = { descricao, valor: valorFinal, tipo: modalType, data: new Date().toISOString().split('T')[0], categoria: { id: parseInt(categoriaId) } };
     try { const res = await fetch(`${API_BASE}/lancamentos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newTransaction) }); if (res.ok) { fetchData(); setIsModalOpen(false); } } catch (error) { alert("Erro ao salvar."); }
   };
+
+  const handleAddGoal = async () => {
+    // Lógica simplificada de adicionar meta via Prompt (por enquanto)
+    const titulo = prompt("Nome da Meta (ex: Carro Novo):");
+    if(!titulo) return;
+    const valorAlvo = parseFloat(prompt("Quanto quer juntar? (ex: 20000)") || "0");
+    const valorAtual = parseFloat(prompt("Quanto já tem? (ex: 500)") || "0");
+    const icone = prompt("Escolha um emoji (ex: 🚗):") || "🎯";
+    
+    const newGoal = { titulo, valorAlvo, valorAtual, icone, dataLimite: "2025-12-31" };
+    
+    try {
+       const res = await fetch(`${API_BASE}/metas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newGoal) });
+       if(res.ok) fetchData();
+    } catch(e) { alert("Erro ao salvar meta"); }
+  }
 
   const handleDelete = async (id: number) => {
     if (confirm("Tem certeza?")) { await fetch(`${API_BASE}/lancamentos/${id}`, { method: 'DELETE' }); fetchData(); }
@@ -239,7 +263,7 @@ export default function PoupApp() {
         </div>
       );
       case 'orcamento': return <BudgetPage />;
-      case 'metas': return <GoalsPage />;
+      case 'metas': return <GoalsPage goals={goals} onAdd={handleAddGoal} />;
       case 'relatorios': return <ReportsPage />;
       case 'configuracoes': return <SettingsPage />;
       case 'receitas': case 'despesas': return (
