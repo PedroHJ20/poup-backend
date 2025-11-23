@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye, Pencil, Search
+  LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye, Pencil, Search, CreditCard
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from 'recharts';
-// --- BIBLIOTECAS DE PDF ---
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -16,6 +15,7 @@ type Meta = { id: number; titulo: string; valorAlvo: number; valorAtual: number;
 type ChartData = { name: string; receita: number; despesa: number; };
 type Orcamento = { id: number; valorLimite: number; categoria: Categoria; };
 type CategoryData = { name: string; value: number; };
+type Cartao = { id: number; nome: string; limite: number; diaFechamento: number; diaVencimento: number; };
 
 // --- CONFIGURAÇÃO ---
 const API_BASE = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev"; 
@@ -122,23 +122,61 @@ const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   </div>
 );
 
-// --- RELATÓRIOS (AGORA COM PDF!) ---
+// --- PÁGINA DE CARTÕES (COM EDITAR E EXCLUIR) ---
+const CardsPage = ({ cards, onAdd, onEdit, onDelete }: { cards: Cartao[], onAdd: () => void, onEdit: (c: Cartao) => void, onDelete: (id: number) => void }) => (
+  <div className="space-y-6 animate-fadeIn">
+    <header className="flex justify-between items-center">
+      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Cartões de Crédito</h1>
+      <button onClick={onAdd} className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700"><Plus size={20} /></button>
+    </header>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {cards.map((card) => (
+        <div key={card.id} className="relative bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-3xl shadow-xl text-white h-48 flex flex-col justify-between overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+          
+          <div className="flex justify-between items-start z-10">
+            <div>
+              <h3 className="font-bold text-lg">{card.nome}</h3>
+              <p className="text-xs text-gray-400">Limite: R$ {card.limite.toLocaleString()}</p>
+            </div>
+            {/* BOTÕES DE AÇÃO (APARECEM AO PASSAR O MOUSE) */}
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => onEdit(card)} className="p-1.5 bg-white/10 rounded hover:bg-white/20" title="Editar"><Pencil size={14} /></button>
+              <button onClick={() => onDelete(card.id)} className="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40" title="Excluir"><Trash2 size={14} /></button>
+            </div>
+          </div>
+          
+          <div className="z-10">
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <span>Fecha dia {card.diaFechamento}</span>
+              <span>Vence dia {card.diaVencimento}</span>
+            </div>
+            <p className="font-mono text-lg tracking-widest">•••• •••• •••• 1234</p>
+          </div>
+        </div>
+      ))}
+      {cards.length === 0 && (
+        <div className="col-span-full text-center py-10">
+          <p className="text-gray-400">Nenhum cartão cadastrado.</p>
+          <button onClick={onAdd} className="text-indigo-600 font-bold mt-2 hover:underline">Cadastrar agora</button>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// --- RELATÓRIOS (AGORA COM O BUG CORRIGIDO!) ---
 const ReportsPage = ({ categoryData, transactions }: { categoryData: CategoryData[], transactions: Transaction[] }) => {
   
-  // FUNÇÃO PARA GERAR PDF
   const generatePDF = () => {
     const doc = new jsPDF();
-    
-    // Cabeçalho
     doc.setFontSize(20);
-    doc.setTextColor(79, 70, 229); // Indigo
+    doc.setTextColor(79, 70, 229);
     doc.text("Relatório Financeiro - POUP", 14, 22);
-    
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 30);
 
-    // Tabela de Transações
     const tableRows = transactions.map(t => [
       new Date(t.data).toLocaleDateString('pt-BR'),
       t.descricao,
@@ -152,7 +190,7 @@ const ReportsPage = ({ categoryData, transactions }: { categoryData: CategoryDat
       body: tableRows,
       startY: 40,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [79, 70, 229] }, // Cor do cabeçalho da tabela
+      headStyles: { fillColor: [79, 70, 229] },
     });
 
     doc.save("Relatorio_POUP.pdf");
@@ -189,7 +227,7 @@ const ReportsPage = ({ categoryData, transactions }: { categoryData: CategoryDat
                 </div>
               );
             })}
-            {categoryData.length === 0 && <p className="text-center text-gray-400 py-10">Sem gastos.</p>}
+            {categoryData.length === 0 && <p className="text-center text-gray-400 py-10">Sem gastos registrados.</p>}
           </div>
         </div>
       </div>
@@ -197,7 +235,6 @@ const ReportsPage = ({ categoryData, transactions }: { categoryData: CategoryDat
   );
 };
 
-// --- CONFIGURAÇÕES ---
 const SettingsPage = ({ isDarkMode, toggleTheme }: any) => (
   <div className="space-y-6 animate-fadeIn">
     <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Configurações</h1>
@@ -254,6 +291,44 @@ const ModalBudget = ({ onClose, onSave, categories }: any) => {
   );
 };
 
+// --- NOVO MODAL DE CARTÃO (ATUALIZADO PARA EDIÇÃO) ---
+const ModalCard = ({ onClose, onSave, editingCard }: any) => {
+  const [nome, setNome] = useState("");
+  const [limite, setLimite] = useState("");
+  const [fechamento, setFechamento] = useState("");
+  const [vencimento, setVencimento] = useState("");
+
+  useEffect(() => {
+    if (editingCard) {
+      setNome(editingCard.nome);
+      setLimite(editingCard.limite.toString());
+      setFechamento(editingCard.diaFechamento.toString());
+      setVencimento(editingCard.diaVencimento.toString());
+    } else {
+      setNome(""); setLimite(""); setFechamento(""); setVencimento("");
+    }
+  }, [editingCard]);
+
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(nome, parseFloat(limite), parseInt(fechamento), parseInt(vencimento), editingCard?.id); };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
+        <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-gray-800 dark:text-white">{editingCard ? 'Editar Cartão' : 'Novo Cartão'}</h2><button onClick={onClose} className="p-2 bg-gray-50 dark:bg-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600"><X size={20} className="dark:text-white"/></button></div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Nome do Cartão</label><input required type="text" placeholder="Ex: Nubank" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={nome} onChange={e => setNome(e.target.value)} /></div>
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Limite (R$)</label><input required type="number" step="0.01" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={limite} onChange={e => setLimite(e.target.value)} /></div>
+          <div className="flex gap-4">
+            <div className="flex-1"><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Dia Fechamento</label><input required type="number" min="1" max="31" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={fechamento} onChange={e => setFechamento(e.target.value)} /></div>
+            <div className="flex-1"><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Dia Vencimento</label><input required type="number" min="1" max="31" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={vencimento} onChange={e => setVencimento(e.target.value)} /></div>
+          </div>
+          <button type="submit" className="w-full py-3 rounded-xl font-bold text-white mt-4 bg-indigo-600 hover:bg-indigo-700">{editingCard ? 'Atualizar' : 'Criar Cartão'}</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // --- APP PRINCIPAL ---
 
 export default function PoupApp() {
@@ -265,43 +340,32 @@ export default function PoupApp() {
   const [budgets, setBudgets] = useState<Orcamento[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>(INITIAL_CHART_DATA);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [cards, setCards] = useState<Cartao[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  
   const [modalType, setModalType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingCard, setEditingCard] = useState<Cartao | null>(null); // ESTADO PARA EDIÇÃO DE CARTÃO
 
-  useEffect(() => { 
-    fetchData(); 
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { setIsDarkMode(true); }
-  }, []);
-
+  useEffect(() => { fetchData(); if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { setIsDarkMode(true); } }, []);
   useEffect(() => { if (isDarkMode) { document.documentElement.classList.add('dark'); } else { document.documentElement.classList.remove('dark'); } }, [isDarkMode]);
 
   const fetchData = async () => {
     try {
-      const [resTrans, resCat, resGoals, resChart, resBudgets, resCatData] = await Promise.all([
-        fetch(`${API_BASE}/lancamentos`),
-        fetch(`${API_BASE}/categorias`),
-        fetch(`${API_BASE}/metas`),
-        fetch(`${API_BASE}/dashboard/grafico`),
-        fetch(`${API_BASE}/orcamentos`),
-        fetch(`${API_BASE}/dashboard/gastos-por-categoria`)
+      const [resTrans, resCat, resGoals, resChart, resBudgets, resCatData, resCards] = await Promise.all([
+        fetch(`${API_BASE}/lancamentos`), fetch(`${API_BASE}/categorias`), fetch(`${API_BASE}/metas`), fetch(`${API_BASE}/dashboard/grafico`), fetch(`${API_BASE}/orcamentos`), fetch(`${API_BASE}/dashboard/gastos-por-categoria`), fetch(`${API_BASE}/cartoes`)
       ]);
-      setTransactions(await resTrans.json());
-      setCategories(await resCat.json());
-      setGoals(await resGoals.json());
-      setChartData(await resChart.json());
-      setBudgets(await resBudgets.json());
-      setCategoryData(await resCatData.json());
+      setTransactions(await resTrans.json()); setCategories(await resCat.json()); setGoals(await resGoals.json()); setChartData(await resChart.json()); setBudgets(await resBudgets.json()); setCategoryData(await resCatData.json()); setCards(await resCards.json());
     } catch (error) { console.error("Erro:", error); }
   };
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
-    setSearchTerm(term);
+    const term = e.target.value; setSearchTerm(term);
     if (term.length > 0) { const res = await fetch(`${API_BASE}/lancamentos/busca?termo=${term}`); setTransactions(await res.json()); } 
     else { const res = await fetch(`${API_BASE}/lancamentos`); setTransactions(await res.json()); }
   };
@@ -309,10 +373,27 @@ export default function PoupApp() {
   const openCreateModal = (type: 'RECEITA' | 'DESPESA') => { setModalType(type); setEditingTransaction(null); setIsModalOpen(true); };
   const openEditModal = (transaction: Transaction) => { setModalType(transaction.tipo as 'RECEITA' | 'DESPESA'); setEditingTransaction(transaction); setIsModalOpen(true); };
 
+  const openCreateCardModal = () => { setEditingCard(null); setIsCardModalOpen(true); };
+  const openEditCardModal = (card: Cartao) => { setEditingCard(card); setIsCardModalOpen(true); };
+
   const handleSaveTransaction = async (descricao: string, valor: number, categoriaId: string, id?: number) => {
     const valorFinal = modalType === 'DESPESA' ? -Math.abs(valor) : Math.abs(valor);
     const payload = { descricao, valor: valorFinal, tipo: modalType, data: new Date().toISOString().split('T')[0], categoria: { id: parseInt(categoriaId) } };
     try { let url = `${API_BASE}/lancamentos`; let method = 'POST'; if (id) { url = `${API_BASE}/lancamentos/${id}`; method = 'PUT'; } const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (res.ok) { fetchData(); setIsModalOpen(false); } } catch (error) { alert("Erro ao salvar."); }
+  };
+
+  const handleSaveCard = async (nome: string, limite: number, diaFechamento: number, diaVencimento: number, id?: number) => {
+    const payload = { nome, limite, diaFechamento, diaVencimento, usuario: { id: 1 } };
+    try { 
+      let url = `${API_BASE}/cartoes`; let method = 'POST'; 
+      if (id) { url = `${API_BASE}/cartoes/${id}`; method = 'PUT'; }
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
+      if(res.ok) { fetchData(); setIsCardModalOpen(false); } 
+    } catch(e) { alert("Erro ao salvar cartão"); }
+  }
+
+  const handleDeleteCard = async (id: number) => {
+    if (confirm("Tem certeza que deseja excluir este cartão?")) { await fetch(`${API_BASE}/cartoes/${id}`, { method: 'DELETE' }); fetchData(); }
   };
 
   const handleSaveBudget = async (valorLimite: number, categoriaId: string) => {
@@ -349,7 +430,8 @@ export default function PoupApp() {
       );
       case 'orcamento': return <BudgetPage budgets={budgets} transactions={transactions} onAdd={() => setIsBudgetModalOpen(true)} />;
       case 'metas': return <GoalsPage goals={goals} onAdd={handleAddGoal} />;
-      case 'relatorios': return <ReportsPage categoryData={categoryData} transactions={transactions} />; // <--- AGORA PASSA TRANSACTIONS!
+      case 'cartoes': return <CardsPage cards={cards} onAdd={openCreateCardModal} onEdit={openEditCardModal} onDelete={handleDeleteCard} />;
+      case 'relatorios': return <ReportsPage categoryData={categoryData} transactions={transactions} />;
       case 'configuracoes': return <SettingsPage isDarkMode={isDarkMode} toggleTheme={setIsDarkMode} />;
       case 'receitas': case 'despesas': return (<div className="space-y-6 animate-fadeIn"><header className="flex flex-col md:flex-row md:items-center justify-between gap-4"><div><h1 className="text-3xl font-bold text-gray-800 dark:text-white capitalize">{activeTab}</h1></div><div className="flex gap-3"><div className="relative"><Search className="absolute left-3 top-3 text-gray-400" size={20} /><input type="text" placeholder="Buscar..." className="pl-10 p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={handleSearch} /></div><button onClick={() => openCreateModal(activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg"><Plus size={18} /> Novo</button></div></header><div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm"><div className="space-y-3">{transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div></div>);
       default: return null;
@@ -362,12 +444,13 @@ export default function PoupApp() {
     <div className={`flex h-screen bg-[#F3F4F6] dark:bg-gray-900 font-sans overflow-hidden text-gray-800 ${isDarkMode ? 'dark' : ''}`}>
       <aside className={`fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 flex flex-col border-r border-gray-100 dark:border-gray-700 md:static ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform`}>
         <div className="p-6 flex flex-col items-center text-center border-b border-gray-50 dark:border-gray-700"><div className="w-32 h-32 mb-4 bg-indigo-50 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden"><img src="/poup.png" alt="POUP" className="w-full h-full object-cover" /></div><h1 className="text-3xl font-black text-indigo-600 dark:text-indigo-400">POUP</h1></div>
-        <nav className="flex-1 p-6 space-y-2 overflow-y-auto"><NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" /><NavItem id="receitas" icon={TrendingUp} label="Receitas" /><NavItem id="despesas" icon={TrendingDown} label="Despesas" /><NavItem id="orcamento" icon={Wallet} label="Orçamento" /><NavItem id="metas" icon={Target} label="Metas" /><NavItem id="relatorios" icon={PieChart} label="Relatórios" /><NavItem id="configuracoes" icon={Settings} label="Configurações" /></nav>
+        <nav className="flex-1 p-6 space-y-2 overflow-y-auto"><NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" /><NavItem id="receitas" icon={TrendingUp} label="Receitas" /><NavItem id="despesas" icon={TrendingDown} label="Despesas" /><NavItem id="cartoes" icon={CreditCard} label="Cartões" /><NavItem id="orcamento" icon={Wallet} label="Orçamento" /><NavItem id="metas" icon={Target} label="Metas" /><NavItem id="relatorios" icon={PieChart} label="Relatórios" /><NavItem id="configuracoes" icon={Settings} label="Configurações" /></nav>
       </aside>
       <main className="flex-1 flex flex-col h-full relative"><header className="h-20 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-8"><button className="md:hidden text-gray-500 dark:text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu /></button><div className="ml-auto flex items-center gap-4"><Bell className="text-gray-400" /><div className="w-10 h-10 bg-indigo-600 rounded-full text-white flex items-center justify-center font-bold shadow-md">UD</div></div></header><div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#FAFAFA] dark:bg-gray-900"><div className="max-w-7xl mx-auto">{renderContent()}</div></div></main>
       
       {isModalOpen && (<ModalTransaction onClose={() => setIsModalOpen(false)} onSave={handleSaveTransaction} type={modalType} categories={categories} editingTransaction={editingTransaction} />)}
       {isBudgetModalOpen && (<ModalBudget onClose={() => setIsBudgetModalOpen(false)} onSave={handleSaveBudget} categories={categories} />)}
+      {isCardModalOpen && (<ModalCard onClose={() => setIsCardModalOpen(false)} onSave={handleSaveCard} editingCard={editingCard} />)}
     </div>
   );
 }

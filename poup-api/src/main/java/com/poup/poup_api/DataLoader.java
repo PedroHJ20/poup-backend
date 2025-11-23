@@ -14,20 +14,23 @@ public class DataLoader implements CommandLineRunner {
     private final ContaRepository contaRepository;
     private final MetaRepository metaRepository;
     private final OrcamentoRepository orcamentoRepository;
+    private final CartaoCreditoRepository cartaoCreditoRepository; // NOVO REPOSITÓRIO
 
-    // Injetando todos os repositórios
+    // Injeção de dependência via construtor (todas as 7 entidades)
     public DataLoader(LancamentoRepository lancamentoRepository, 
                       CategoriaRepository categoriaRepository,
                       UsuarioRepository usuarioRepository,
                       ContaRepository contaRepository,
                       MetaRepository metaRepository,
-                      OrcamentoRepository orcamentoRepository) {
+                      OrcamentoRepository orcamentoRepository,
+                      CartaoCreditoRepository cartaoCreditoRepository) {
         this.lancamentoRepository = lancamentoRepository;
         this.categoriaRepository = categoriaRepository;
         this.usuarioRepository = usuarioRepository;
         this.contaRepository = contaRepository;
         this.metaRepository = metaRepository;
         this.orcamentoRepository = orcamentoRepository;
+        this.cartaoCreditoRepository = cartaoCreditoRepository;
     }
 
     @Override
@@ -43,10 +46,11 @@ public class DataLoader implements CommandLineRunner {
         Conta contaNubank = new Conta();
         contaNubank.setNome("Nubank");
         contaNubank.setSaldo(3500.00);
-        contaNubank.setUsuario(user); // Vincula ao usuário
+        contaNubank.setUsuario(user);
         contaRepository.save(contaNubank);
 
         // 3. Pegar Categorias (já criadas pelo data.sql)
+        // IDs baseados no script data.sql: 1=Alimentação, 2=Moradia, 3=Transporte, 4=Lazer, 6=Salário
         Categoria catAlimentacao = categoriaRepository.findById(1L).orElse(null);
         Categoria catMoradia = categoriaRepository.findById(2L).orElse(null);
         Categoria catSalario = categoriaRepository.findById(6L).orElse(null);
@@ -80,7 +84,16 @@ public class DataLoader implements CommandLineRunner {
         orcamentoLazer.setUsuario(user);
         orcamentoRepository.save(orcamentoLazer);
 
-        // 6. Criar Lançamentos
+        // 6. Criar Cartão de Crédito (NOVO!)
+        CartaoCredito card = new CartaoCredito();
+        card.setNome("Nubank Ultravioleta");
+        card.setLimite(15000.00);
+        card.setDiaFechamento(7);
+        card.setDiaVencimento(14);
+        card.setUsuario(user);
+        cartaoCreditoRepository.save(card);
+
+        // 7. Criar Lançamentos Iniciais
         Lancamento l1 = new Lancamento();
         l1.setDescricao("Salário TechCorp");
         l1.setValor(5000.00);
@@ -104,6 +117,6 @@ public class DataLoader implements CommandLineRunner {
 
         lancamentoRepository.saveAll(Arrays.asList(l1, l2, l3));
         
-        System.out.println("--- BANCO DE DADOS POVOADO COM SUCESSO (8 ENTIDADES) ---");
+        System.out.println("--- BANCO DE DADOS POVOADO COM SUCESSO (TODAS AS ENTIDADES) ---");
     }
 }
