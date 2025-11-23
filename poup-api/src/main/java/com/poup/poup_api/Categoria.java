@@ -11,6 +11,6 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nome;  // Ex: Alimentação
-    private String icone; // Ex: 🍔
+    private String nome;  
+    private String icone; 
 }

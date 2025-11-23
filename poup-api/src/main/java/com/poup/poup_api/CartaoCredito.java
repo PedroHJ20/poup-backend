@@ -10,10 +10,10 @@ public class CartaoCredito {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nome;          // Ex: "Nubank Violeta"
-    private Double limite;        // Ex: 10000.00
-    private Integer diaFechamento;// Ex: 20 (O dia que a fatura fecha)
-    private Integer diaVencimento;// Ex: 27 (O dia que precisa pagar)
+    private String nome;          
+    private Double limite;        
+    private Integer diaFechamento;
+    private Integer diaVencimento;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
