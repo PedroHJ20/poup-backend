@@ -30,4 +30,17 @@ public class LancamentoController {
     public void deletar(@PathVariable Long id) {
         repository.deleteById(id);
     }
+
+    // PUT /lancamentos/{id} -> Atualiza um lançamento existente
+    @PutMapping("/{id}")
+    public Lancamento atualizar(@PathVariable Long id, @RequestBody Lancamento lancamentoAtualizado) {
+        return repository.findById(id).map(lancamento -> {
+            lancamento.setDescricao(lancamentoAtualizado.getDescricao());
+            lancamento.setValor(lancamentoAtualizado.getValor());
+            lancamento.setTipo(lancamentoAtualizado.getTipo());
+            lancamento.setData(lancamentoAtualizado.getData());
+            lancamento.setCategoria(lancamentoAtualizado.getCategoria());
+            return repository.save(lancamento);
+        }).orElse(null);
+    }
 }
