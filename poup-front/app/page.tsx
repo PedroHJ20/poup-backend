@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye, Pencil
+  LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye, Pencil, Search
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from 'recharts';
 
 // --- TIPOS ---
 type Categoria = { id: number; nome: string; icone: string; };
@@ -12,13 +12,13 @@ type Transaction = { id: number; descricao: string; valor: number; tipo: string;
 type Meta = { id: number; titulo: string; valorAlvo: number; valorAtual: number; dataLimite: string; icone: string; };
 type ChartData = { name: string; receita: number; despesa: number; };
 type Orcamento = { id: number; valorLimite: number; categoria: Categoria; };
+type CategoryData = { name: string; value: number; };
 
 // --- CONFIGURAÇÃO ---
 const API_BASE = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev"; 
 
-const INITIAL_CHART_DATA = [
-  { name: 'Jan', receita: 0, despesa: 0 },
-];
+const INITIAL_CHART_DATA = [{ name: 'Jan', receita: 0, despesa: 0 }];
+const COLORS = ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6'];
 
 // --- COMPONENTES VISUAIS ---
 
@@ -56,12 +56,8 @@ const TransactionItem = ({ transaction, onEdit, onDelete }: { transaction: Trans
         {Math.abs(transaction.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
       </span>
       <div className="flex gap-1">
-        <button onClick={() => onEdit(transaction)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar">
-          <Pencil size={18} />
-        </button>
-        <button onClick={() => onDelete(transaction.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
-          <Trash2 size={18} />
-        </button>
+        <button onClick={() => onEdit(transaction)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={18} /></button>
+        <button onClick={() => onDelete(transaction.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18} /></button>
       </div>
     </div>
   </div>
@@ -69,27 +65,17 @@ const TransactionItem = ({ transaction, onEdit, onDelete }: { transaction: Trans
 
 // --- PÁGINAS INTERNAS ---
 
-// Agora recebe 'onAdd' para abrir o modal
 const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], transactions: Transaction[], onAdd: () => void }) => {
   const totalLimite = budgets.reduce((acc, b) => acc + b.valorLimite, 0);
-  
   const totalGastoGeral = budgets.reduce((acc, b) => {
-    const gastosCategoria = transactions
-      .filter(t => t.tipo === 'DESPESA' && t.categoria?.id === b.categoria.id)
-      .reduce((sum, t) => sum + Math.abs(t.valor), 0);
+    const gastosCategoria = transactions.filter(t => t.tipo === 'DESPESA' && t.categoria?.id === b.categoria.id).reduce((sum, t) => sum + Math.abs(t.valor), 0);
     return acc + gastosCategoria;
   }, 0);
-
   const saldoDisponivel = totalLimite - totalGastoGeral;
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Orçamento</h1>
-        {/* Botão agora funciona! */}
-        <button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button>
-      </div>
-
+      <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800">Orçamento</h1><button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button></div>
       <div className="bg-white p-8 rounded-3xl border border-gray-100 text-center space-y-6 relative overflow-hidden shadow-sm">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
         <div className="grid grid-cols-3 gap-4 text-center">
@@ -98,7 +84,6 @@ const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], tr
           <div><p className="text-xs text-gray-400 uppercase font-bold">Disponível</p><p className={`text-xl font-bold ${saldoDisponivel >= 0 ? 'text-green-500' : 'text-red-600'}`}>R$ {saldoDisponivel.toLocaleString()}</p></div>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {budgets.map(budget => {
           const gastoCategoria = transactions.filter(t => t.tipo === 'DESPESA' && t.categoria?.id === budget.categoria.id).reduce((sum, t) => sum + Math.abs(t.valor), 0);
@@ -111,7 +96,7 @@ const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], tr
             </div>
           );
         })}
-        {budgets.length === 0 && <p className="col-span-2 text-center text-gray-400 py-10">Nenhum orçamento cadastrado. Clique no + para começar.</p>}
+        {budgets.length === 0 && <p className="col-span-2 text-center text-gray-400 py-10">Nenhum orçamento cadastrado.</p>}
       </div>
     </div>
   );
@@ -119,22 +104,14 @@ const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], tr
 
 const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   <div className="space-y-6 animate-fadeIn">
-    <header className="flex justify-between items-center">
-      <h1 className="text-3xl font-bold text-gray-800">Metas</h1>
-      <button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button>
-    </header>
+    <header className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800">Metas</h1><button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button></header>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {goals.map((goal) => {
         const percent = Math.min(100, Math.round((goal.valorAtual / goal.valorAlvo) * 100));
         return (
           <div key={goal.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-            <div className="text-4xl mb-4">{goal.icone}</div>
-            <h3 className="font-bold text-gray-800">{goal.titulo}</h3>
-            <div className="mt-4">
-              <div className="flex justify-between text-xs mb-1"><span className="font-bold text-indigo-600">R$ {goal.valorAtual.toLocaleString()}</span><span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span></div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div></div>
-              <p className="text-right text-xs text-indigo-400 mt-1 font-bold">{percent}%</p>
-            </div>
+            <div className="text-4xl mb-4">{goal.icone}</div><h3 className="font-bold text-gray-800">{goal.titulo}</h3>
+            <div className="mt-4"><div className="flex justify-between text-xs mb-1"><span className="font-bold text-indigo-600">R$ {goal.valorAtual.toLocaleString()}</span><span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span></div><div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div></div><p className="text-right text-xs text-indigo-400 mt-1 font-bold">{percent}%</p></div>
           </div>
         );
       })}
@@ -142,10 +119,35 @@ const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   </div>
 );
 
-const ReportsPage = () => (
+const ReportsPage = ({ categoryData }: { categoryData: CategoryData[] }) => (
   <div className="space-y-6 animate-fadeIn">
     <header className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800">Relatórios</h1><button className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl font-bold text-sm"><Download size={18} /> PDF</button></header>
-    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><h3 className="text-lg font-bold text-gray-800 mb-4">Gastos por Categoria</h3><div className="space-y-4">{[{cat: 'Moradia', val: 1200, pct: 60}, {cat: 'Alimentação', val: 450, pct: 25}, {cat: 'Lazer', val: 120, pct: 15}].map((item) => (<div key={item.cat}><div className="flex justify-between text-sm mb-1"><span className="font-medium text-gray-700">{item.cat}</span><span className="text-gray-500">R$ {item.val} ({item.pct}%)</span></div><div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${item.pct}%` }}></div></div></div>))}</div></div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 w-full">Distribuição de Gastos</h3>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPie><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Pie><Tooltip /></RechartsPie>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Detalhes por Categoria</h3>
+        <div className="space-y-4">
+          {categoryData.map((item, index) => {
+            const total = categoryData.reduce((acc, curr) => acc + curr.value, 0);
+            const percent = Math.round((item.value / total) * 100);
+            return (
+              <div key={index}>
+                <div className="flex justify-between text-sm mb-1"><span className="font-medium text-gray-700 flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS[index % COLORS.length]}}></div>{item.name}</span><span className="text-gray-500">R$ {item.value.toLocaleString()} ({percent}%)</span></div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full" style={{ width: `${percent}%`, backgroundColor: COLORS[index % COLORS.length] }}></div></div>
+              </div>
+            );
+          })}
+          {categoryData.length === 0 && <p className="text-center text-gray-400 py-10">Sem gastos registrados.</p>}
+        </div>
+      </div>
+    </div>
   </div>
 );
 
@@ -159,22 +161,16 @@ const SettingsPage = () => (
   </div>
 );
 
-// --- MODAL DE TRANSAÇÃO ---
-const ModalTransaction = ({ isOpen, onClose, onSave, type, categories, editingTransaction }: any) => {
-  if (!isOpen) return null;
+// --- MODAIS ---
+const ModalTransaction = ({ onClose, onSave, type, categories, editingTransaction }: any) => {
   const [desc, setDesc] = useState("");
   const [val, setVal] = useState("");
   const [catId, setCatId] = useState("");
 
   useEffect(() => {
-    if (editingTransaction) {
-      setDesc(editingTransaction.descricao);
-      setVal(Math.abs(editingTransaction.valor).toString());
-      setCatId(editingTransaction.categoria ? editingTransaction.categoria.id.toString() : "");
-    } else {
-      setDesc(""); setVal(""); setCatId("");
-    }
-  }, [editingTransaction, isOpen]);
+    if (editingTransaction) { setDesc(editingTransaction.descricao); setVal(Math.abs(editingTransaction.valor).toString()); setCatId(editingTransaction.categoria ? editingTransaction.categoria.id.toString() : ""); } 
+    else { setDesc(""); setVal(""); setCatId(""); }
+  }, [editingTransaction]);
 
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(desc, parseFloat(val), catId, editingTransaction?.id); };
 
@@ -186,25 +182,17 @@ const ModalTransaction = ({ isOpen, onClose, onSave, type, categories, editingTr
           <div><label className="block text-sm font-bold text-gray-600 mb-1">Descrição</label><input required type="text" className="w-full p-3 bg-gray-50 rounded-xl" value={desc} onChange={e => setDesc(e.target.value)} /></div>
           <div><label className="block text-sm font-bold text-gray-600 mb-1">Valor (R$)</label><input required type="number" step="0.01" className="w-full p-3 bg-gray-50 rounded-xl" value={val} onChange={e => setVal(e.target.value)} /></div>
           <div><label className="block text-sm font-bold text-gray-600 mb-1">Categoria</label><select required className="w-full p-3 bg-gray-50 rounded-xl" value={catId} onChange={e => setCatId(e.target.value)}><option value="">Selecione...</option>{categories.map((c: any) => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></div>
-          <button type="submit" className={`w-full py-3 rounded-xl font-bold text-white mt-4 ${type === 'RECEITA' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'}`}>Salvar</button>
+          <button type="submit" className={`w-full py-3 rounded-xl font-bold text-white mt-4 ${type === 'RECEITA' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'}`}> {editingTransaction ? 'Atualizar' : 'Salvar'} </button>
         </form>
       </div>
     </div>
   );
 };
 
-// --- NOVO MODAL DE ORÇAMENTO ---
-const ModalBudget = ({ isOpen, onClose, onSave, categories }: any) => {
-  if (!isOpen) return null;
+const ModalBudget = ({ onClose, onSave, categories }: any) => {
   const [val, setVal] = useState("");
   const [catId, setCatId] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => { 
-    e.preventDefault(); 
-    onSave(parseFloat(val), catId); 
-    setVal(""); setCatId(""); // Limpar
-  };
-
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(parseFloat(val), catId); setVal(""); setCatId(""); };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
@@ -224,17 +212,18 @@ const ModalBudget = ({ isOpen, onClose, onSave, categories }: any) => {
 export default function PoupApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [goals, setGoals] = useState<Meta[]>([]);
   const [budgets, setBudgets] = useState<Orcamento[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>(INITIAL_CHART_DATA);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   
-  // Estados dos Modais
+  // SEARCH STATE (NOVO!)
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false); // NOVO STATE
-  
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
@@ -242,19 +231,36 @@ export default function PoupApp() {
 
   const fetchData = async () => {
     try {
-      const [resTrans, resCat, resGoals, resChart, resBudgets] = await Promise.all([
+      const [resTrans, resCat, resGoals, resChart, resBudgets, resCatData] = await Promise.all([
         fetch(`${API_BASE}/lancamentos`),
         fetch(`${API_BASE}/categorias`),
         fetch(`${API_BASE}/metas`),
         fetch(`${API_BASE}/dashboard/grafico`),
-        fetch(`${API_BASE}/orcamentos`)
+        fetch(`${API_BASE}/orcamentos`),
+        fetch(`${API_BASE}/dashboard/gastos-por-categoria`)
       ]);
       setTransactions(await resTrans.json());
       setCategories(await resCat.json());
       setGoals(await resGoals.json());
       setChartData(await resChart.json());
       setBudgets(await resBudgets.json());
+      setCategoryData(await resCatData.json());
     } catch (error) { console.error("Erro:", error); }
+  };
+
+  // BUSCA REAL (NOVO!)
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    if (term.length > 0) {
+      // Chama o Backend
+      const res = await fetch(`${API_BASE}/lancamentos/busca?termo=${term}`);
+      setTransactions(await res.json());
+    } else {
+      // Se limpar, busca tudo de novo
+      const res = await fetch(`${API_BASE}/lancamentos`);
+      setTransactions(await res.json());
+    }
   };
 
   const openCreateModal = (type: 'RECEITA' | 'DESPESA') => { setModalType(type); setEditingTransaction(null); setIsModalOpen(true); };
@@ -263,21 +269,12 @@ export default function PoupApp() {
   const handleSaveTransaction = async (descricao: string, valor: number, categoriaId: string, id?: number) => {
     const valorFinal = modalType === 'DESPESA' ? -Math.abs(valor) : Math.abs(valor);
     const payload = { descricao, valor: valorFinal, tipo: modalType, data: new Date().toISOString().split('T')[0], categoria: { id: parseInt(categoriaId) } };
-    try {
-      let url = `${API_BASE}/lancamentos`; let method = 'POST';
-      if (id) { url = `${API_BASE}/lancamentos/${id}`; method = 'PUT'; }
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (res.ok) { fetchData(); setIsModalOpen(false); }
-    } catch (error) { alert("Erro ao salvar."); }
+    try { let url = `${API_BASE}/lancamentos`; let method = 'POST'; if (id) { url = `${API_BASE}/lancamentos/${id}`; method = 'PUT'; } const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (res.ok) { fetchData(); setIsModalOpen(false); } } catch (error) { alert("Erro ao salvar."); }
   };
 
   const handleSaveBudget = async (valorLimite: number, categoriaId: string) => {
-    // Cria orçamento para o usuário 1 (padrão) e mês atual (11/2025 fixo por enquanto)
     const payload = { valorLimite, mes: 11, ano: 2025, categoria: { id: parseInt(categoriaId) }, usuario: { id: 1 } };
-    try {
-      const res = await fetch(`${API_BASE}/orcamentos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (res.ok) { fetchData(); setIsBudgetModalOpen(false); }
-    } catch (error) { alert("Erro ao salvar orçamento."); }
+    try { const res = await fetch(`${API_BASE}/orcamentos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (res.ok) { fetchData(); setIsBudgetModalOpen(false); } } catch (error) { alert("Erro ao salvar orçamento."); }
   };
 
   const handleAddGoal = async () => {
@@ -289,9 +286,7 @@ export default function PoupApp() {
     try { const res = await fetch(`${API_BASE}/metas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newGoal) }); if(res.ok) fetchData(); } catch(e) { alert("Erro"); }
   }
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Tem certeza?")) { await fetch(`${API_BASE}/lancamentos/${id}`, { method: 'DELETE' }); fetchData(); }
-  };
+  const handleDelete = async (id: number) => { if (confirm("Tem certeza?")) { await fetch(`${API_BASE}/lancamentos/${id}`, { method: 'DELETE' }); fetchData(); } };
 
   const income = transactions.filter(t => t.tipo === 'RECEITA').reduce((acc, cur) => acc + cur.valor, 0);
   const expense = transactions.filter(t => t.tipo === 'DESPESA').reduce((acc, cur) => acc + Math.abs(cur.valor), 0);
@@ -311,18 +306,29 @@ export default function PoupApp() {
       );
       case 'orcamento': return <BudgetPage budgets={budgets} transactions={transactions} onAdd={() => setIsBudgetModalOpen(true)} />;
       case 'metas': return <GoalsPage goals={goals} onAdd={handleAddGoal} />;
-      case 'relatorios': return <ReportsPage />;
+      case 'relatorios': return <ReportsPage categoryData={categoryData} />;
       case 'configuracoes': return <SettingsPage />;
       case 'receitas': case 'despesas': return (
-        <div className="space-y-6 animate-fadeIn"><header className="flex justify-between items-center"><div><h1 className="text-3xl font-bold text-gray-800 capitalize">{activeTab}</h1></div><button onClick={() => openCreateModal(activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg"><Plus size={18} /> Novo</button></header><div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><div className="space-y-3">{transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div></div>
+        <div className="space-y-6 animate-fadeIn">
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div><h1 className="text-3xl font-bold text-gray-800 capitalize">{activeTab}</h1></div>
+            <div className="flex gap-3">
+              {/* BARRA DE BUSCA AQUI */}
+              <div className="relative">
+                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                <input type="text" placeholder="Buscar..." className="pl-10 p-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={handleSearch} />
+              </div>
+              <button onClick={() => openCreateModal(activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg"><Plus size={18} /> Novo</button>
+            </div>
+          </header>
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><div className="space-y-3">{transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div>
+        </div>
       );
       default: return null;
     }
   };
 
-  const NavItem = ({ id, icon: Icon, label }: any) => (
-    <button onClick={() => setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' : 'text-gray-500 hover:bg-indigo-50'}`}><Icon size={20} /> {label} {activeTab === id && <ChevronRight size={16} className="ml-auto opacity-50" />}</button>
-  );
+  const NavItem = ({ id, icon: Icon, label }: any) => (<button onClick={() => setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' : 'text-gray-500 hover:bg-indigo-50'}`}><Icon size={20} /> {label} {activeTab === id && <ChevronRight size={16} className="ml-auto opacity-50" />}</button>);
 
   return (
     <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden text-gray-800">
@@ -330,26 +336,10 @@ export default function PoupApp() {
         <div className="p-6 flex flex-col items-center text-center border-b border-gray-50"><div className="w-32 h-32 mb-4 bg-indigo-50 rounded-full flex items-center justify-center overflow-hidden"><img src="/poup.png" alt="POUP" className="w-full h-full object-cover" /></div><h1 className="text-3xl font-black text-indigo-600">POUP</h1></div>
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto"><NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" /><NavItem id="receitas" icon={TrendingUp} label="Receitas" /><NavItem id="despesas" icon={TrendingDown} label="Despesas" /><NavItem id="orcamento" icon={Wallet} label="Orçamento" /><NavItem id="metas" icon={Target} label="Metas" /><NavItem id="relatorios" icon={PieChart} label="Relatórios" /><NavItem id="configuracoes" icon={Settings} label="Configurações" /></nav>
       </aside>
-      <main className="flex-1 flex flex-col h-full relative">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8"><button className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu /></button><div className="ml-auto flex items-center gap-4"><Bell className="text-gray-400" /><div className="w-10 h-10 bg-indigo-600 rounded-full text-white flex items-center justify-center font-bold shadow-md">UD</div></div></header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#FAFAFA]"><div className="max-w-7xl mx-auto">{renderContent()}</div></div>
-      </main>
+      <main className="flex-1 flex flex-col h-full relative"><header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8"><button className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu /></button><div className="ml-auto flex items-center gap-4"><Bell className="text-gray-400" /><div className="w-10 h-10 bg-indigo-600 rounded-full text-white flex items-center justify-center font-bold shadow-md">UD</div></div></header><div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#FAFAFA]"><div className="max-w-7xl mx-auto">{renderContent()}</div></div></main>
       
-      {/* Modais */}
-      <ModalTransaction 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSave={handleSaveTransaction} 
-        type={modalType} 
-        categories={categories}
-        editingTransaction={editingTransaction} 
-      />
-      <ModalBudget 
-        isOpen={isBudgetModalOpen}
-        onClose={() => setIsBudgetModalOpen(false)}
-        onSave={handleSaveBudget}
-        categories={categories}
-      />
+      {isModalOpen && (<ModalTransaction onClose={() => setIsModalOpen(false)} onSave={handleSaveTransaction} type={modalType} categories={categories} editingTransaction={editingTransaction} />)}
+      {isBudgetModalOpen && (<ModalBudget onClose={() => setIsBudgetModalOpen(false)} onSave={handleSaveBudget} categories={categories} />)}
     </div>
   );
 }

@@ -43,4 +43,9 @@ public class LancamentoController {
             return repository.save(lancamento);
         }).orElse(null);
     }
+    // GET /lancamentos/busca?termo=Burger
+    @GetMapping("/busca")
+    public List<Lancamento> buscar(@RequestParam String termo) {
+        return repository.findByDescricaoContainingIgnoreCase(termo);
+    }
 }
