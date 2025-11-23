@@ -11,15 +11,14 @@ type Categoria = { id: number; nome: string; icone: string; };
 type Transaction = { id: number; descricao: string; valor: number; tipo: string; data: string; categoria?: Categoria; };
 type Meta = { id: number; titulo: string; valorAlvo: number; valorAtual: number; dataLimite: string; icone: string; };
 type ChartData = { name: string; receita: number; despesa: number; };
+type Orcamento = { id: number; valorLimite: number; categoria: Categoria; }; // NOVO TIPO
 
 // --- CONFIGURAÇÃO ---
-// ATENÇÃO: Verifique se este link ainda é o da sua porta 8080 pública!
+// ATENÇÃO: Mantenha o link que estava funcionando para você!
 const API_BASE = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev"; 
 
-// Dados iniciais (só para não ficar vazio antes de carregar)
 const INITIAL_CHART_DATA = [
   { name: 'Jan', receita: 0, despesa: 0 },
-  { name: 'Fev', receita: 0, despesa: 0 },
 ];
 
 // --- COMPONENTES VISUAIS ---
@@ -62,29 +61,88 @@ const TransactionItem = ({ transaction, onDelete }: { transaction: Transaction, 
   </div>
 );
 
-// --- COMPONENTES DE PÁGINAS INTERNAS ---
+// --- PÁGINA DE ORÇAMENTO (AGORA REAL!) ---
+const BudgetPage = ({ budgets, transactions }: { budgets: Orcamento[], transactions: Transaction[] }) => {
+  
+  // Calcular totais gerais
+  const totalLimite = budgets.reduce((acc, b) => acc + b.valorLimite, 0);
+  
+  // Calcula quanto gastou SOMENTE nas categorias que têm orçamento
+  const totalGastoGeral = budgets.reduce((acc, b) => {
+    const gastosCategoria = transactions
+      .filter(t => t.tipo === 'DESPESA' && t.categoria?.id === b.categoria.id)
+      .reduce((sum, t) => sum + Math.abs(t.valor), 0);
+    return acc + gastosCategoria;
+  }, 0);
 
-const BudgetPage = () => (
-  <div className="space-y-6 animate-fadeIn">
-    <h1 className="text-3xl font-bold text-gray-800">Orçamento</h1>
-    <div className="bg-white p-8 rounded-3xl border border-gray-100 text-center space-y-6 relative overflow-hidden shadow-sm">
-      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div><p className="text-xs text-gray-400 uppercase font-bold">Limite</p><p className="text-xl font-bold text-gray-800">R$ 3.600,00</p></div>
-        <div><p className="text-xs text-gray-400 uppercase font-bold">Gasto</p><p className="text-xl font-bold text-red-500">R$ 2.352,50</p></div>
-        <div><p className="text-xs text-gray-400 uppercase font-bold">Disponível</p><p className="text-xl font-bold text-green-500">R$ 1.247,50</p></div>
+  const saldoDisponivel = totalLimite - totalGastoGeral;
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-800">Orçamento</h1>
+        <button className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button>
       </div>
-      <div className="py-4">
-        <div className="flex justify-between text-sm mb-2 font-medium"><span>Progresso do Mês</span><span className="text-yellow-600">65%</span></div>
-        <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-yellow-400 w-[65%]"></div></div>
+
+      {/* Resumo Geral */}
+      <div className="bg-white p-8 rounded-3xl border border-gray-100 text-center space-y-6 relative overflow-hidden shadow-sm">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div><p className="text-xs text-gray-400 uppercase font-bold">Limite Total</p><p className="text-xl font-bold text-gray-800">R$ {totalLimite.toLocaleString()}</p></div>
+          <div><p className="text-xs text-gray-400 uppercase font-bold">Gasto</p><p className="text-xl font-bold text-red-500">R$ {totalGastoGeral.toLocaleString()}</p></div>
+          <div><p className="text-xs text-gray-400 uppercase font-bold">Disponível</p><p className={`text-xl font-bold ${saldoDisponivel >= 0 ? 'text-green-500' : 'text-red-600'}`}>R$ {saldoDisponivel.toLocaleString()}</p></div>
+        </div>
       </div>
-      <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 flex items-start gap-3 text-left">
-        <AlertTriangle className="text-yellow-600 shrink-0" size={20} />
-        <div><h4 className="text-sm font-bold text-yellow-800">Atenção ao consumo</h4><p className="text-xs text-yellow-700 mt-1">Você já consumiu 65% do orçamento.</p></div>
+
+      {/* Lista de Categorias */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {budgets.map(budget => {
+          // Calcula gasto desta categoria específica
+          const gastoCategoria = transactions
+            .filter(t => t.tipo === 'DESPESA' && t.categoria?.id === budget.categoria.id)
+            .reduce((sum, t) => sum + Math.abs(t.valor), 0);
+          
+          const percent = Math.min(100, Math.round((gastoCategoria / budget.valorLimite) * 100));
+          const isAlert = percent > 80;
+
+          return (
+            <div key={budget.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{budget.categoria.icone}</span>
+                  <h3 className="font-bold text-gray-800">{budget.categoria.nome}</h3>
+                </div>
+                <span className="text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg text-gray-500">Mensal</span>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-medium">
+                  <span className={isAlert ? "text-red-500" : "text-indigo-600"}>Gasto: R$ {gastoCategoria}</span>
+                  <span className="text-gray-400">Limite: R$ {budget.valorLimite}</span>
+                </div>
+                <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${isAlert ? 'bg-red-500' : 'bg-indigo-500'}`} 
+                    style={{ width: `${percent}%` }}
+                  ></div>
+                </div>
+                {isAlert && (
+                  <div className="flex items-center gap-1 text-xs text-red-500 mt-1">
+                    <AlertTriangle size={12} /> Cuidado! Você usou {percent}% do limite.
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+      
+      {budgets.length === 0 && (
+        <p className="text-center text-gray-400 py-10">Nenhum orçamento definido no sistema.</p>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   <div className="space-y-6 animate-fadeIn">
@@ -100,13 +158,8 @@ const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
             <div className="text-4xl mb-4">{goal.icone}</div>
             <h3 className="font-bold text-gray-800">{goal.titulo}</h3>
             <div className="mt-4">
-              <div className="flex justify-between text-xs mb-1">
-                 <span className="font-bold text-indigo-600">R$ {goal.valorAtual.toLocaleString()}</span>
-                 <span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                 <div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div>
-              </div>
+              <div className="flex justify-between text-xs mb-1"><span className="font-bold text-indigo-600">R$ {goal.valorAtual.toLocaleString()}</span><span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span></div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div></div>
               <p className="text-right text-xs text-indigo-400 mt-1 font-bold">{percent}%</p>
             </div>
           </div>
@@ -195,7 +248,8 @@ export default function PoupApp() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [goals, setGoals] = useState<Meta[]>([]);
-  const [chartData, setChartData] = useState<ChartData[]>(INITIAL_CHART_DATA); // NOVO STATE
+  const [budgets, setBudgets] = useState<Orcamento[]>([]); // NOVO STATE
+  const [chartData, setChartData] = useState<ChartData[]>(INITIAL_CHART_DATA);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
@@ -204,18 +258,19 @@ export default function PoupApp() {
 
   const fetchData = async () => {
     try {
-      // Busca TUDO do Backend (Incluindo o novo gráfico)
-      const [resTrans, resCat, resGoals, resChart] = await Promise.all([
+      const [resTrans, resCat, resGoals, resChart, resBudgets] = await Promise.all([
         fetch(`${API_BASE}/lancamentos`),
         fetch(`${API_BASE}/categorias`),
         fetch(`${API_BASE}/metas`),
-        fetch(`${API_BASE}/dashboard/grafico`) // <--- CHAMADA AO NOVO ENDPOINT
+        fetch(`${API_BASE}/dashboard/grafico`),
+        fetch(`${API_BASE}/orcamentos`) // <--- NOVO: Buscando orçamentos
       ]);
 
       setTransactions(await resTrans.json());
       setCategories(await resCat.json());
       setGoals(await resGoals.json());
-      setChartData(await resChart.json()); // <--- ATUALIZA O GRÁFICO
+      setChartData(await resChart.json());
+      setBudgets(await resBudgets.json()); // <--- SALVANDO ORÇAMENTOS
 
     } catch (error) { console.error("Erro:", error); }
   };
@@ -227,8 +282,7 @@ export default function PoupApp() {
   };
 
   const handleAddGoal = async () => {
-    const titulo = prompt("Nome da Meta:");
-    if(!titulo) return;
+    const titulo = prompt("Nome da Meta:"); if(!titulo) return;
     const valorAlvo = parseFloat(prompt("Valor Alvo:") || "0");
     const valorAtual = parseFloat(prompt("Valor Atual:") || "0");
     const icone = prompt("Emoji:") || "🎯";
@@ -256,7 +310,7 @@ export default function PoupApp() {
            </div>
         </div>
       );
-      case 'orcamento': return <BudgetPage />;
+      case 'orcamento': return <BudgetPage budgets={budgets} transactions={transactions} />; // Passando dados reais
       case 'metas': return <GoalsPage goals={goals} onAdd={handleAddGoal} />;
       case 'relatorios': return <ReportsPage />;
       case 'configuracoes': return <SettingsPage />;
