@@ -5,6 +5,9 @@ import {
   LayoutDashboard, TrendingDown, TrendingUp, Target, Wallet, PieChart, Settings, LogOut, Bell, Menu, ChevronRight, Plus, Trash2, X, User, AlertTriangle, Download, Moon, Sun, Eye, Pencil, Search
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from 'recharts';
+// --- BIBLIOTECAS DE PDF ---
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // --- TIPOS ---
 type Categoria = { id: number; nome: string; icone: string; };
@@ -24,12 +27,12 @@ const COLORS = ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6'
 
 const SummaryCard = ({ title, value, subtitle, type = 'neutral' }: any) => {
   const getTextColor = () => {
-    if (type === 'positive') return 'text-green-600';
-    if (type === 'negative') return 'text-red-600';
-    return 'text-gray-800';
+    if (type === 'positive') return 'text-green-600 dark:text-green-400';
+    if (type === 'negative') return 'text-red-600 dark:text-red-400';
+    return 'text-gray-800 dark:text-white';
   };
   return (
-    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{title}</h3>
       <p className={`text-2xl font-bold ${getTextColor()}`}>{value}</p>
       <p className="text-xs text-gray-400 mt-2">{subtitle}</p>
@@ -38,26 +41,26 @@ const SummaryCard = ({ title, value, subtitle, type = 'neutral' }: any) => {
 };
 
 const TransactionItem = ({ transaction, onEdit, onDelete }: { transaction: Transaction, onEdit: (t: Transaction) => void, onDelete: (id: number) => void }) => (
-  <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-white hover:border-indigo-100 transition-all group">
+  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-2xl hover:bg-white dark:hover:bg-gray-700 transition-all group">
     <div className="flex items-center gap-4">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${transaction.tipo === 'RECEITA' ? 'bg-green-100' : 'bg-red-100'}`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${transaction.tipo === 'RECEITA' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
         {transaction.categoria ? transaction.categoria.icone : (transaction.tipo === 'RECEITA' ? '💰' : '💸')}
       </div>
       <div>
-        <h4 className="font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{transaction.descricao}</h4>
-        <p className="text-xs text-gray-500 font-medium">
+        <h4 className="font-bold text-gray-800 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{transaction.descricao}</h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
           {new Date(transaction.data).toLocaleDateString('pt-BR')} • {transaction.categoria ? transaction.categoria.nome : 'Geral'}
         </p>
       </div>
     </div>
     <div className="flex items-center gap-4">
-      <span className={`font-bold text-lg ${transaction.tipo === 'RECEITA' ? 'text-green-600' : 'text-red-600'}`}>
+      <span className={`font-bold text-lg ${transaction.tipo === 'RECEITA' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
         {transaction.tipo === 'DESPESA' ? '- ' : '+ '}
         {Math.abs(transaction.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
       </span>
       <div className="flex gap-1">
-        <button onClick={() => onEdit(transaction)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={18} /></button>
-        <button onClick={() => onDelete(transaction.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18} /></button>
+        <button onClick={() => onEdit(transaction)} className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-600 rounded-lg transition-colors"><Pencil size={18} /></button>
+        <button onClick={() => onDelete(transaction.id)} className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded-lg transition-colors"><Trash2 size={18} /></button>
       </div>
     </div>
   </div>
@@ -75,13 +78,13 @@ const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], tr
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800">Orçamento</h1><button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button></div>
-      <div className="bg-white p-8 rounded-3xl border border-gray-100 text-center space-y-6 relative overflow-hidden shadow-sm">
+      <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800 dark:text-white">Orçamento</h1><button onClick={onAdd} className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700"><Plus size={20} /></button></div>
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl border border-gray-100 dark:border-gray-700 text-center space-y-6 relative overflow-hidden shadow-sm">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div><p className="text-xs text-gray-400 uppercase font-bold">Limite Total</p><p className="text-xl font-bold text-gray-800">R$ {totalLimite.toLocaleString()}</p></div>
-          <div><p className="text-xs text-gray-400 uppercase font-bold">Gasto</p><p className="text-xl font-bold text-red-500">R$ {totalGastoGeral.toLocaleString()}</p></div>
-          <div><p className="text-xs text-gray-400 uppercase font-bold">Disponível</p><p className={`text-xl font-bold ${saldoDisponivel >= 0 ? 'text-green-500' : 'text-red-600'}`}>R$ {saldoDisponivel.toLocaleString()}</p></div>
+          <div><p className="text-xs text-gray-400 uppercase font-bold">Limite Total</p><p className="text-xl font-bold text-gray-800 dark:text-white">R$ {totalLimite.toLocaleString()}</p></div>
+          <div><p className="text-xs text-gray-400 uppercase font-bold">Gasto</p><p className="text-xl font-bold text-red-500 dark:text-red-400">R$ {totalGastoGeral.toLocaleString()}</p></div>
+          <div><p className="text-xs text-gray-400 uppercase font-bold">Disponível</p><p className={`text-xl font-bold ${saldoDisponivel >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>R$ {saldoDisponivel.toLocaleString()}</p></div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -90,9 +93,9 @@ const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], tr
           const percent = Math.min(100, Math.round((gastoCategoria / budget.valorLimite) * 100));
           const isAlert = percent > 80;
           return (
-            <div key={budget.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-center mb-4"><div className="flex items-center gap-3"><span className="text-2xl">{budget.categoria.icone}</span><h3 className="font-bold text-gray-800">{budget.categoria.nome}</h3></div><span className="text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg text-gray-500">Mensal</span></div>
-              <div className="space-y-2"><div className="flex justify-between text-xs font-medium"><span className={isAlert ? "text-red-500" : "text-indigo-600"}>Gasto: R$ {gastoCategoria}</span><span className="text-gray-400">Limite: R$ {budget.valorLimite}</span></div><div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden"><div className={`h-full transition-all duration-1000 ${isAlert ? 'bg-red-500' : 'bg-indigo-500'}`} style={{ width: `${percent}%` }}></div></div></div>
+            <div key={budget.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+              <div className="flex justify-between items-center mb-4"><div className="flex items-center gap-3"><span className="text-2xl">{budget.categoria.icone}</span><h3 className="font-bold text-gray-800 dark:text-gray-100">{budget.categoria.nome}</h3></div><span className="text-xs font-bold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg text-gray-500 dark:text-gray-300">Mensal</span></div>
+              <div className="space-y-2"><div className="flex justify-between text-xs font-medium"><span className={isAlert ? "text-red-500" : "text-indigo-600 dark:text-indigo-400"}>Gasto: R$ {gastoCategoria}</span><span className="text-gray-400">Limite: R$ {budget.valorLimite}</span></div><div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden"><div className={`h-full transition-all duration-1000 ${isAlert ? 'bg-red-500' : 'bg-indigo-500'}`} style={{ width: `${percent}%` }}></div></div></div>
             </div>
           );
         })}
@@ -104,14 +107,14 @@ const BudgetPage = ({ budgets, transactions, onAdd }: { budgets: Orcamento[], tr
 
 const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   <div className="space-y-6 animate-fadeIn">
-    <header className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800">Metas</h1><button onClick={onAdd} className="bg-indigo-100 text-indigo-600 p-2 rounded-lg hover:bg-indigo-200"><Plus size={20} /></button></header>
+    <header className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800 dark:text-white">Metas</h1><button onClick={onAdd} className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700"><Plus size={20} /></button></header>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {goals.map((goal) => {
         const percent = Math.min(100, Math.round((goal.valorAtual / goal.valorAlvo) * 100));
         return (
-          <div key={goal.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-            <div className="text-4xl mb-4">{goal.icone}</div><h3 className="font-bold text-gray-800">{goal.titulo}</h3>
-            <div className="mt-4"><div className="flex justify-between text-xs mb-1"><span className="font-bold text-indigo-600">R$ {goal.valorAtual.toLocaleString()}</span><span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span></div><div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div></div><p className="text-right text-xs text-indigo-400 mt-1 font-bold">{percent}%</p></div>
+          <div key={goal.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div className="text-4xl mb-4">{goal.icone}</div><h3 className="font-bold text-gray-800 dark:text-white">{goal.titulo}</h3>
+            <div className="mt-4"><div className="flex justify-between text-xs mb-1"><span className="font-bold text-indigo-600 dark:text-indigo-400">R$ {goal.valorAtual.toLocaleString()}</span><span className="text-gray-400">Meta: R$ {goal.valorAlvo.toLocaleString()}</span></div><div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all duration-1000" style={{width: `${percent}%`}}></div></div><p className="text-right text-xs text-indigo-400 mt-1 font-bold">{percent}%</p></div>
           </div>
         );
       })}
@@ -119,44 +122,88 @@ const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   </div>
 );
 
-const ReportsPage = ({ categoryData }: { categoryData: CategoryData[] }) => (
-  <div className="space-y-6 animate-fadeIn">
-    <header className="flex justify-between items-center"><h1 className="text-3xl font-bold text-gray-800">Relatórios</h1><button className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl font-bold text-sm"><Download size={18} /> PDF</button></header>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 w-full">Distribuição de Gastos</h3>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsPie><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Pie><Tooltip /></RechartsPie>
-          </ResponsiveContainer>
+// --- RELATÓRIOS (AGORA COM PDF!) ---
+const ReportsPage = ({ categoryData, transactions }: { categoryData: CategoryData[], transactions: Transaction[] }) => {
+  
+  // FUNÇÃO PARA GERAR PDF
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    
+    // Cabeçalho
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229); // Indigo
+    doc.text("Relatório Financeiro - POUP", 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 30);
+
+    // Tabela de Transações
+    const tableRows = transactions.map(t => [
+      new Date(t.data).toLocaleDateString('pt-BR'),
+      t.descricao,
+      t.categoria ? t.categoria.nome : 'Geral',
+      t.tipo,
+      t.tipo === 'DESPESA' ? `- R$ ${Math.abs(t.valor)}` : `+ R$ ${t.valor}`
+    ]);
+
+    autoTable(doc, {
+      head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']],
+      body: tableRows,
+      startY: 40,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [79, 70, 229] }, // Cor do cabeçalho da tabela
+    });
+
+    doc.save("Relatorio_POUP.pdf");
+  };
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      <header className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Relatórios</h1>
+        <button onClick={generatePDF} className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-gray-800 px-4 py-2 rounded-xl font-bold text-sm hover:bg-indigo-100 transition-colors">
+          <Download size={18} /> Baixar PDF
+        </button>
+      </header>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 w-full">Distribuição</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPie><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Pie><Tooltip /></RechartsPie>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
-      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Detalhes por Categoria</h3>
-        <div className="space-y-4">
-          {categoryData.map((item, index) => {
-            const total = categoryData.reduce((acc, curr) => acc + curr.value, 0);
-            const percent = Math.round((item.value / total) * 100);
-            return (
-              <div key={index}>
-                <div className="flex justify-between text-sm mb-1"><span className="font-medium text-gray-700 flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS[index % COLORS.length]}}></div>{item.name}</span><span className="text-gray-500">R$ {item.value.toLocaleString()} ({percent}%)</span></div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full" style={{ width: `${percent}%`, backgroundColor: COLORS[index % COLORS.length] }}></div></div>
-              </div>
-            );
-          })}
-          {categoryData.length === 0 && <p className="text-center text-gray-400 py-10">Sem gastos registrados.</p>}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Detalhes</h3>
+          <div className="space-y-4">
+            {categoryData.map((item, index) => {
+              const total = categoryData.reduce((acc, curr) => acc + curr.value, 0);
+              const percent = Math.round((item.value / total) * 100);
+              return (
+                <div key={index}>
+                  <div className="flex justify-between text-sm mb-1"><span className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS[index % COLORS.length]}}></div>{item.name}</span><span className="text-gray-500">R$ {item.value.toLocaleString()} ({percent}%)</span></div>
+                  <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden"><div className="h-full" style={{ width: `${percent}%`, backgroundColor: COLORS[index % COLORS.length] }}></div></div>
+                </div>
+              );
+            })}
+            {categoryData.length === 0 && <p className="text-center text-gray-400 py-10">Sem gastos.</p>}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
-const SettingsPage = () => (
+// --- CONFIGURAÇÕES ---
+const SettingsPage = ({ isDarkMode, toggleTheme }: any) => (
   <div className="space-y-6 animate-fadeIn">
-    <h1 className="text-3xl font-bold text-gray-800">Configurações</h1>
+    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Configurações</h1>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2"><User size={20}/> Perfil</h3><div className="space-y-4"><div><label className="text-sm font-bold text-gray-600">Nome</label><input type="text" defaultValue="Usuário Demo" className="w-full p-3 bg-gray-50 rounded-xl mt-1" /></div><div><label className="text-sm font-bold text-gray-600">Email</label><input type="email" defaultValue="user@email.com" className="w-full p-3 bg-gray-50 rounded-xl mt-1" /></div><button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700">Salvar</button></div></div>
-      <div className="space-y-6"><div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Eye size={20}/> Aparência</h3><div className="flex gap-4"><button className="flex-1 p-4 border-2 border-indigo-600 bg-indigo-50 rounded-xl flex flex-col items-center gap-2 text-indigo-700 font-bold"><Sun size={24}/> Claro</button></div></div></div>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm"><h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"><User size={20}/> Perfil</h3><div className="space-y-4"><div><label className="text-sm font-bold text-gray-600 dark:text-gray-400">Nome</label><input type="text" defaultValue="Usuário Demo" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl mt-1 border-none" /></div><div><label className="text-sm font-bold text-gray-600 dark:text-gray-400">Email</label><input type="email" defaultValue="user@email.com" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl mt-1 border-none" /></div><button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700">Salvar</button></div></div>
+      <div className="space-y-6"><div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm"><h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><Eye size={20}/> Aparência</h3><div className="flex gap-4"><button onClick={() => toggleTheme(false)} className={`flex-1 p-4 border-2 rounded-xl flex flex-col items-center gap-2 font-bold transition-all ${!isDarkMode ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><Sun size={24}/> Claro</button><button onClick={() => toggleTheme(true)} className={`flex-1 p-4 border-2 rounded-xl flex flex-col items-center gap-2 font-bold transition-all ${isDarkMode ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400' : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><Moon size={24}/> Escuro</button></div></div></div>
     </div>
   </div>
 );
@@ -176,12 +223,12 @@ const ModalTransaction = ({ onClose, onSave, type, categories, editingTransactio
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
-        <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-gray-800">{editingTransaction ? 'Editar' : 'Nova'} {type === 'RECEITA' ? 'Receita' : 'Despesa'}</h2><button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100"><X size={20}/></button></div>
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
+        <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-gray-800 dark:text-white">{editingTransaction ? 'Editar' : 'Nova'} {type === 'RECEITA' ? 'Receita' : 'Despesa'}</h2><button onClick={onClose} className="p-2 bg-gray-50 dark:bg-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600"><X size={20} className="dark:text-white"/></button></div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div><label className="block text-sm font-bold text-gray-600 mb-1">Descrição</label><input required type="text" className="w-full p-3 bg-gray-50 rounded-xl" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-          <div><label className="block text-sm font-bold text-gray-600 mb-1">Valor (R$)</label><input required type="number" step="0.01" className="w-full p-3 bg-gray-50 rounded-xl" value={val} onChange={e => setVal(e.target.value)} /></div>
-          <div><label className="block text-sm font-bold text-gray-600 mb-1">Categoria</label><select required className="w-full p-3 bg-gray-50 rounded-xl" value={catId} onChange={e => setCatId(e.target.value)}><option value="">Selecione...</option>{categories.map((c: any) => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></div>
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Descrição</label><input required type="text" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={desc} onChange={e => setDesc(e.target.value)} /></div>
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Valor (R$)</label><input required type="number" step="0.01" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Categoria</label><select required className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={catId} onChange={e => setCatId(e.target.value)}><option value="">Selecione...</option>{categories.map((c: any) => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></div>
           <button type="submit" className={`w-full py-3 rounded-xl font-bold text-white mt-4 ${type === 'RECEITA' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'}`}> {editingTransaction ? 'Atualizar' : 'Salvar'} </button>
         </form>
       </div>
@@ -195,11 +242,11 @@ const ModalBudget = ({ onClose, onSave, categories }: any) => {
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(parseFloat(val), catId); setVal(""); setCatId(""); };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
-        <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-gray-800">Novo Orçamento</h2><button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100"><X size={20}/></button></div>
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
+        <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-gray-800 dark:text-white">Novo Orçamento</h2><button onClick={onClose} className="p-2 bg-gray-50 dark:bg-gray-700 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600"><X size={20} className="dark:text-white"/></button></div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div><label className="block text-sm font-bold text-gray-600 mb-1">Categoria</label><select required className="w-full p-3 bg-gray-50 rounded-xl" value={catId} onChange={e => setCatId(e.target.value)}><option value="">Selecione...</option>{categories.map((c: any) => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></div>
-          <div><label className="block text-sm font-bold text-gray-600 mb-1">Limite Mensal (R$)</label><input required type="number" step="0.01" className="w-full p-3 bg-gray-50 rounded-xl" value={val} onChange={e => setVal(e.target.value)} /></div>
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Categoria</label><select required className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={catId} onChange={e => setCatId(e.target.value)}><option value="">Selecione...</option>{categories.map((c: any) => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></div>
+          <div><label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">Limite Mensal (R$)</label><input required type="number" step="0.01" className="w-full p-3 bg-gray-50 dark:bg-gray-700 dark:text-white rounded-xl border-none" value={val} onChange={e => setVal(e.target.value)} /></div>
           <button type="submit" className="w-full py-3 rounded-xl font-bold text-white mt-4 bg-indigo-600 hover:bg-indigo-700">Criar Orçamento</button>
         </form>
       </div>
@@ -218,16 +265,20 @@ export default function PoupApp() {
   const [budgets, setBudgets] = useState<Orcamento[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>(INITIAL_CHART_DATA);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
-  
-  // SEARCH STATE (NOVO!)
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { 
+    fetchData(); 
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { setIsDarkMode(true); }
+  }, []);
+
+  useEffect(() => { if (isDarkMode) { document.documentElement.classList.add('dark'); } else { document.documentElement.classList.remove('dark'); } }, [isDarkMode]);
 
   const fetchData = async () => {
     try {
@@ -248,19 +299,11 @@ export default function PoupApp() {
     } catch (error) { console.error("Erro:", error); }
   };
 
-  // BUSCA REAL (NOVO!)
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);
-    if (term.length > 0) {
-      // Chama o Backend
-      const res = await fetch(`${API_BASE}/lancamentos/busca?termo=${term}`);
-      setTransactions(await res.json());
-    } else {
-      // Se limpar, busca tudo de novo
-      const res = await fetch(`${API_BASE}/lancamentos`);
-      setTransactions(await res.json());
-    }
+    if (term.length > 0) { const res = await fetch(`${API_BASE}/lancamentos/busca?termo=${term}`); setTransactions(await res.json()); } 
+    else { const res = await fetch(`${API_BASE}/lancamentos`); setTransactions(await res.json()); }
   };
 
   const openCreateModal = (type: 'RECEITA' | 'DESPESA') => { setModalType(type); setEditingTransaction(null); setIsModalOpen(true); };
@@ -296,47 +339,32 @@ export default function PoupApp() {
     switch(activeTab) {
       case 'dashboard': return (
         <div className="space-y-8 animate-fadeIn">
-           <div><h1 className="text-3xl font-bold text-gray-800">Dashboard</h1></div>
+           <div><h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1></div>
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6"><SummaryCard title="Saldo Atual" value={balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} subtitle="Receitas - Despesas" /><SummaryCard title="Receitas do Mês" value={`+ ${income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="positive" subtitle="Entradas" /><SummaryCard title="Despesas do Mês" value={`- ${expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="negative" subtitle="Saídas" /></div>
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-             <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><h2 className="text-lg font-bold text-gray-800 mb-4">Balanço</h2><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" /><XAxis dataKey="name" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="receita" fill="#818CF8" radius={[4, 4, 0, 0]} /><Bar dataKey="despesa" fill="#C084FC" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></div>
-             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col h-full"><div className="flex justify-between items-center mb-6"><h2 className="text-lg font-bold text-gray-800">Últimas</h2><div className="flex gap-2"><button onClick={() => openCreateModal('RECEITA')} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><Plus size={18}/></button><button onClick={() => openCreateModal('DESPESA')} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Plus size={18}/></button></div></div><div className="space-y-3 overflow-y-auto max-h-80 pr-2 custom-scrollbar">{transactions.slice(0, 5).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div>
+             <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm"><h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Balanço</h2><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" /><XAxis dataKey="name" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="receita" fill="#818CF8" radius={[4, 4, 0, 0]} /><Bar dataKey="despesa" fill="#C084FC" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></div>
+             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col h-full"><div className="flex justify-between items-center mb-6"><h2 className="text-lg font-bold text-gray-800 dark:text-white">Últimas</h2><div className="flex gap-2"><button onClick={() => openCreateModal('RECEITA')} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><Plus size={18}/></button><button onClick={() => openCreateModal('DESPESA')} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Plus size={18}/></button></div></div><div className="space-y-3 overflow-y-auto max-h-80 pr-2 custom-scrollbar">{transactions.slice(0, 5).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div>
            </div>
         </div>
       );
       case 'orcamento': return <BudgetPage budgets={budgets} transactions={transactions} onAdd={() => setIsBudgetModalOpen(true)} />;
       case 'metas': return <GoalsPage goals={goals} onAdd={handleAddGoal} />;
-      case 'relatorios': return <ReportsPage categoryData={categoryData} />;
-      case 'configuracoes': return <SettingsPage />;
-      case 'receitas': case 'despesas': return (
-        <div className="space-y-6 animate-fadeIn">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div><h1 className="text-3xl font-bold text-gray-800 capitalize">{activeTab}</h1></div>
-            <div className="flex gap-3">
-              {/* BARRA DE BUSCA AQUI */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-                <input type="text" placeholder="Buscar..." className="pl-10 p-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={handleSearch} />
-              </div>
-              <button onClick={() => openCreateModal(activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg"><Plus size={18} /> Novo</button>
-            </div>
-          </header>
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><div className="space-y-3">{transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div>
-        </div>
-      );
+      case 'relatorios': return <ReportsPage categoryData={categoryData} transactions={transactions} />; // <--- AGORA PASSA TRANSACTIONS!
+      case 'configuracoes': return <SettingsPage isDarkMode={isDarkMode} toggleTheme={setIsDarkMode} />;
+      case 'receitas': case 'despesas': return (<div className="space-y-6 animate-fadeIn"><header className="flex flex-col md:flex-row md:items-center justify-between gap-4"><div><h1 className="text-3xl font-bold text-gray-800 dark:text-white capitalize">{activeTab}</h1></div><div className="flex gap-3"><div className="relative"><Search className="absolute left-3 top-3 text-gray-400" size={20} /><input type="text" placeholder="Buscar..." className="pl-10 p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={handleSearch} /></div><button onClick={() => openCreateModal(activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg"><Plus size={18} /> Novo</button></div></header><div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm"><div className="space-y-3">{transactions.filter(t => t.tipo === (activeTab === 'receitas' ? 'RECEITA' : 'DESPESA')).map(t => <TransactionItem key={t.id} transaction={t} onEdit={openEditModal} onDelete={handleDelete} />)}</div></div></div>);
       default: return null;
     }
   };
 
-  const NavItem = ({ id, icon: Icon, label }: any) => (<button onClick={() => setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' : 'text-gray-500 hover:bg-indigo-50'}`}><Icon size={20} /> {label} {activeTab === id && <ChevronRight size={16} className="ml-auto opacity-50" />}</button>);
+  const NavItem = ({ id, icon: Icon, label }: any) => (<button onClick={() => setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-gray-700'}`}><Icon size={20} /> {label} {activeTab === id && <ChevronRight size={16} className="ml-auto opacity-50" />}</button>);
 
   return (
-    <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden text-gray-800">
-      <aside className={`fixed inset-y-0 left-0 z-30 w-72 bg-white flex flex-col border-r border-gray-100 md:static ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform`}>
-        <div className="p-6 flex flex-col items-center text-center border-b border-gray-50"><div className="w-32 h-32 mb-4 bg-indigo-50 rounded-full flex items-center justify-center overflow-hidden"><img src="/poup.png" alt="POUP" className="w-full h-full object-cover" /></div><h1 className="text-3xl font-black text-indigo-600">POUP</h1></div>
+    <div className={`flex h-screen bg-[#F3F4F6] dark:bg-gray-900 font-sans overflow-hidden text-gray-800 ${isDarkMode ? 'dark' : ''}`}>
+      <aside className={`fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 flex flex-col border-r border-gray-100 dark:border-gray-700 md:static ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform`}>
+        <div className="p-6 flex flex-col items-center text-center border-b border-gray-50 dark:border-gray-700"><div className="w-32 h-32 mb-4 bg-indigo-50 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden"><img src="/poup.png" alt="POUP" className="w-full h-full object-cover" /></div><h1 className="text-3xl font-black text-indigo-600 dark:text-indigo-400">POUP</h1></div>
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto"><NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" /><NavItem id="receitas" icon={TrendingUp} label="Receitas" /><NavItem id="despesas" icon={TrendingDown} label="Despesas" /><NavItem id="orcamento" icon={Wallet} label="Orçamento" /><NavItem id="metas" icon={Target} label="Metas" /><NavItem id="relatorios" icon={PieChart} label="Relatórios" /><NavItem id="configuracoes" icon={Settings} label="Configurações" /></nav>
       </aside>
-      <main className="flex-1 flex flex-col h-full relative"><header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8"><button className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu /></button><div className="ml-auto flex items-center gap-4"><Bell className="text-gray-400" /><div className="w-10 h-10 bg-indigo-600 rounded-full text-white flex items-center justify-center font-bold shadow-md">UD</div></div></header><div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#FAFAFA]"><div className="max-w-7xl mx-auto">{renderContent()}</div></div></main>
+      <main className="flex-1 flex flex-col h-full relative"><header className="h-20 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-8"><button className="md:hidden text-gray-500 dark:text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu /></button><div className="ml-auto flex items-center gap-4"><Bell className="text-gray-400" /><div className="w-10 h-10 bg-indigo-600 rounded-full text-white flex items-center justify-center font-bold shadow-md">UD</div></div></header><div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#FAFAFA] dark:bg-gray-900"><div className="max-w-7xl mx-auto">{renderContent()}</div></div></main>
       
       {isModalOpen && (<ModalTransaction onClose={() => setIsModalOpen(false)} onSave={handleSaveTransaction} type={modalType} categories={categories} editingTransaction={editingTransaction} />)}
       {isBudgetModalOpen && (<ModalBudget onClose={() => setIsBudgetModalOpen(false)} onSave={handleSaveBudget} categories={categories} />)}
