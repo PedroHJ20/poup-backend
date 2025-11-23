@@ -6,22 +6,20 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// --- TIPOS (Compatível com seu Java) ---
+// --- TIPOS ---
 type Categoria = { id: number; nome: string; icone: string; };
 type Transaction = { id: number; descricao: string; valor: number; tipo: string; data: string; categoria?: Categoria; };
 type Meta = { id: number; titulo: string; valorAlvo: number; valorAtual: number; dataLimite: string; icone: string; };
+type ChartData = { name: string; receita: number; despesa: number; };
 
 // --- CONFIGURAÇÃO ---
-// ATENÇÃO: Se o link do Codespaces mudar, atualize aqui!
+// ATENÇÃO: Verifique se este link ainda é o da sua porta 8080 pública!
 const API_BASE = "https://upgraded-space-acorn-jj9q4jg556g9h56g6-8080.app.github.dev"; 
 
-const CHART_DATA = [
-  { name: 'Jan', receita: 4000, despesa: 2400 },
-  { name: 'Fev', receita: 3000, despesa: 1398 },
-  { name: 'Mar', receita: 2000, despesa: 9800 },
-  { name: 'Abr', receita: 2780, despesa: 3908 },
-  { name: 'Mai', receita: 1890, despesa: 4800 },
-  { name: 'Jun', receita: 2390, despesa: 3800 },
+// Dados iniciais (só para não ficar vazio antes de carregar)
+const INITIAL_CHART_DATA = [
+  { name: 'Jan', receita: 0, despesa: 0 },
+  { name: 'Fev', receita: 0, despesa: 0 },
 ];
 
 // --- COMPONENTES VISUAIS ---
@@ -88,7 +86,6 @@ const BudgetPage = () => (
   </div>
 );
 
-// AGORA AS METAS SÃO REAIS!
 const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
   <div className="space-y-6 animate-fadeIn">
     <header className="flex justify-between items-center">
@@ -115,7 +112,7 @@ const GoalsPage = ({ goals, onAdd }: { goals: Meta[], onAdd: () => void }) => (
           </div>
         );
       })}
-      {goals.length === 0 && <p className="col-span-3 text-center text-gray-400 py-10">Nenhuma meta criada. Clique no + para começar!</p>}
+      {goals.length === 0 && <p className="col-span-3 text-center text-gray-400 py-10">Nenhuma meta criada.</p>}
     </div>
   </div>
 );
@@ -197,7 +194,8 @@ export default function PoupApp() {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
-  const [goals, setGoals] = useState<Meta[]>([]); // Estado das Metas
+  const [goals, setGoals] = useState<Meta[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>(INITIAL_CHART_DATA); // NOVO STATE
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
@@ -206,16 +204,18 @@ export default function PoupApp() {
 
   const fetchData = async () => {
     try {
-      // Busca TUDO do Backend
-      const [resTrans, resCat, resGoals] = await Promise.all([
+      // Busca TUDO do Backend (Incluindo o novo gráfico)
+      const [resTrans, resCat, resGoals, resChart] = await Promise.all([
         fetch(`${API_BASE}/lancamentos`),
         fetch(`${API_BASE}/categorias`),
-        fetch(`${API_BASE}/metas`)
+        fetch(`${API_BASE}/metas`),
+        fetch(`${API_BASE}/dashboard/grafico`) // <--- CHAMADA AO NOVO ENDPOINT
       ]);
 
       setTransactions(await resTrans.json());
       setCategories(await resCat.json());
       setGoals(await resGoals.json());
+      setChartData(await resChart.json()); // <--- ATUALIZA O GRÁFICO
 
     } catch (error) { console.error("Erro:", error); }
   };
@@ -227,19 +227,13 @@ export default function PoupApp() {
   };
 
   const handleAddGoal = async () => {
-    // Lógica simplificada de adicionar meta via Prompt (por enquanto)
-    const titulo = prompt("Nome da Meta (ex: Carro Novo):");
+    const titulo = prompt("Nome da Meta:");
     if(!titulo) return;
-    const valorAlvo = parseFloat(prompt("Quanto quer juntar? (ex: 20000)") || "0");
-    const valorAtual = parseFloat(prompt("Quanto já tem? (ex: 500)") || "0");
-    const icone = prompt("Escolha um emoji (ex: 🚗):") || "🎯";
-    
+    const valorAlvo = parseFloat(prompt("Valor Alvo:") || "0");
+    const valorAtual = parseFloat(prompt("Valor Atual:") || "0");
+    const icone = prompt("Emoji:") || "🎯";
     const newGoal = { titulo, valorAlvo, valorAtual, icone, dataLimite: "2025-12-31" };
-    
-    try {
-       const res = await fetch(`${API_BASE}/metas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newGoal) });
-       if(res.ok) fetchData();
-    } catch(e) { alert("Erro ao salvar meta"); }
+    try { const res = await fetch(`${API_BASE}/metas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newGoal) }); if(res.ok) fetchData(); } catch(e) { alert("Erro"); }
   }
 
   const handleDelete = async (id: number) => {
@@ -257,7 +251,7 @@ export default function PoupApp() {
            <div><h1 className="text-3xl font-bold text-gray-800">Dashboard</h1></div>
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6"><SummaryCard title="Saldo Atual" value={balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} subtitle="Receitas - Despesas" /><SummaryCard title="Receitas do Mês" value={`+ ${income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="positive" subtitle="Entradas" /><SummaryCard title="Despesas do Mês" value={`- ${expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`} type="negative" subtitle="Saídas" /></div>
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-             <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><h2 className="text-lg font-bold text-gray-800 mb-4">Balanço</h2><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={CHART_DATA}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" /><XAxis dataKey="name" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="receita" fill="#818CF8" radius={[4, 4, 0, 0]} /><Bar dataKey="despesa" fill="#C084FC" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></div>
+             <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><h2 className="text-lg font-bold text-gray-800 mb-4">Balanço</h2><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" /><XAxis dataKey="name" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="receita" fill="#818CF8" radius={[4, 4, 0, 0]} /><Bar dataKey="despesa" fill="#C084FC" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></div>
              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col h-full"><div className="flex justify-between items-center mb-6"><h2 className="text-lg font-bold text-gray-800">Últimas</h2><div className="flex gap-2"><button onClick={() => {setModalType('RECEITA'); setIsModalOpen(true)}} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><Plus size={18}/></button><button onClick={() => {setModalType('DESPESA'); setIsModalOpen(true)}} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Plus size={18}/></button></div></div><div className="space-y-3 overflow-y-auto max-h-80 pr-2 custom-scrollbar">{transactions.slice(0, 5).map(t => <TransactionItem key={t.id} transaction={t} onDelete={handleDelete} />)}</div></div>
            </div>
         </div>
