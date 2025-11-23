@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -20,4 +22,8 @@ public class Lancamento {
     private Double valor;     // Ex: -150.00, 3000.00
     private String tipo;      // "DESPESA" ou "RECEITA"
     private LocalDate data;   // A data do movimento
+
+    @ManyToOne // Muitos lançamentos para Uma categoria
+    @JoinColumn(name = "categoria_id") // Cria uma coluna 'categoria_id' na tabela
+    private Categoria categoria;
 }
