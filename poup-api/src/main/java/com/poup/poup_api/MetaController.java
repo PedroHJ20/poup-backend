@@ -14,4 +14,24 @@ public class MetaController {
 
     @PostMapping
     public Meta criar(@RequestBody Meta meta) { return repository.save(meta); }
+
+
+    // ... métodos antigos ...
+
+    @PutMapping("/{id}")
+    public Meta atualizar(@PathVariable Long id, @RequestBody Meta metaAtualizada) {
+        return repository.findById(id).map(meta -> {
+            meta.setTitulo(metaAtualizada.getTitulo());
+            meta.setValorAlvo(metaAtualizada.getValorAlvo());
+            meta.setValorAtual(metaAtualizada.getValorAtual());
+            meta.setDataLimite(metaAtualizada.getDataLimite());
+            meta.setIcone(metaAtualizada.getIcone());
+            return repository.save(meta);
+        }).orElse(null);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deletar(@PathVariable Long id) {
+        repository.deleteById(id);
+    }
 }

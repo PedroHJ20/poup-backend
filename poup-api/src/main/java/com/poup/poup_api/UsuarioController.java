@@ -38,4 +38,10 @@ public class UsuarioController {
             return repository.save(usuario);
         }).orElse(null);
     }
+    // ... métodos antigos ...
+
+    @DeleteMapping("/{id}")
+    public void deletar(@PathVariable Long id) {
+        repository.deleteById(id);
+    }
 }

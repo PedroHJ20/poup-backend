@@ -14,4 +14,23 @@ public class OrcamentoController {
 
     @PostMapping
     public Orcamento criar(@RequestBody Orcamento orcamento) { return repository.save(orcamento); }
+
+    // ... métodos antigos ...
+
+    @PutMapping("/{id}")
+    public Orcamento atualizar(@PathVariable Long id, @RequestBody Orcamento orcamentoNovo) {
+        return repository.findById(id).map(orcamento -> {
+            orcamento.setValorLimite(orcamentoNovo.getValorLimite());
+            orcamento.setMes(orcamentoNovo.getMes());
+            orcamento.setAno(orcamentoNovo.getAno());
+            // Se quiser permitir trocar a categoria do orçamento:
+            orcamento.setCategoria(orcamentoNovo.getCategoria());
+            return repository.save(orcamento);
+        }).orElse(null);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deletar(@PathVariable Long id) {
+        repository.deleteById(id);
+    }
 }
