@@ -1,4 +1,5 @@
 # poup-backend
+Nome dos integrantes: Miguel Augusto, Carlos Henrique da Costa, Ludimilla Dias, Matheus Soares, Pedro Henrique Geronimo, Ryan Do Santos, Thiago Castro, Ygor Tarcio
 
 Back-end desenvolvido em Spring Boot para o projeto POUP, focado em educação financeira acessível.
 
