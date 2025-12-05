@@ -1,5 +1,8 @@
 
+
 "use client";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE as string;
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -20,7 +23,8 @@ type Cartao = { id: number; nome: string; limite: number; diaFechamento: number;
 type Usuario = { id: number; nome: string; email: string; };
 
 // --- CONFIGURAÇÃO ---
-const API_BASE = "https://poup-backend-production.up.railway.app";
+
+
 
 const INITIAL_CHART_DATA = [{ name: 'Jan', receita: 0, despesa: 0 }];
 const COLORS = ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6'];
